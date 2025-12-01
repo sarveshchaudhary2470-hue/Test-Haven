@@ -1,0 +1,1300 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Users, FileText, TrendingUp, Download, User, GraduationCap, Calendar,
+    Award, BarChart3, BookOpen, Bell, Target, CheckCircle2, XCircle, Clock,
+    Plus, Upload, Trash2, AlertCircle, X, Check, Ban, UserX, ChevronDown, ChevronUp, Trophy
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import SuperContestSection from '../../components/SuperContestSection';
+import SuperContestResults from '../../components/SuperContestResults';
+import SuperContestResultsSection from '../../components/SuperContestResultsSection';
+
+const PrincipalDashboard = () => {
+    const { user } = useAuth();
+    const [results, setResults] = useState([]);
+    const [tests, setTests] = useState([]);
+    const [studyMaterials, setStudyMaterials] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [teachers, setTeachers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+    const [expandedClass, setExpandedClass] = useState(null);
+    const [showContestResults, setShowContestResults] = useState(false);
+    const [selectedContestId, setSelectedContestId] = useState(null);
+
+    // Form states
+    const [showNotificationForm, setShowNotificationForm] = useState(false);
+    const [showMaterialForm, setShowMaterialForm] = useState(false);
+    const [notificationForm, setNotificationForm] = useState({
+        title: '',
+        message: '',
+        type: 'general',
+        priority: 'medium',
+        classes: [],
+        expiresAt: ''
+    });
+    const [materialForm, setMaterialForm] = useState({
+        title: '',
+        subject: '',
+        description: '',
+        fileUrl: '',
+        fileType: 'PDF',
+        fileSize: '',
+        class: ''
+    });
+    const [showStudentForm, setShowStudentForm] = useState(false);
+    const [studentForm, setStudentForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        class: '',
+        rollNumber: ''
+    });
+
+    const [showTeacherForm, setShowTeacherForm] = useState(false);
+    const [teacherForm, setTeacherForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        subject: ''
+    });
+
+    const handleAddStudent = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('http://localhost:5000/api/students', studentForm, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            alert('✅ Student registered successfully!');
+            setShowStudentForm(false);
+            setStudentForm({
+                name: '',
+                email: '',
+                password: '',
+                class: '',
+                rollNumber: ''
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error registering student:', error);
+            const errorMsg = error.response?.data?.message || 'Failed to register student';
+            alert('❌ ' + errorMsg);
+        }
+    };
+
+    const handleAddTeacher = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('http://localhost:5000/api/teachers', teacherForm, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            alert('✅ Teacher registered successfully!');
+            setShowTeacherForm(false);
+            setTeacherForm({
+                name: '',
+                email: '',
+                password: '',
+                subject: ''
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error registering teacher:', error);
+            const errorMsg = error.response?.data?.message || 'Failed to register teacher';
+            alert('❌ ' + errorMsg);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [resultsRes, testsRes, materialsRes, notificationsRes, studentsRes, teachersRes] = await Promise.all([
+                axios.get(`http://localhost:5000/api/results/school/${user.school._id}`),
+                axios.get('http://localhost:5000/api/tests'),
+                axios.get('http://localhost:5000/api/study-materials'),
+                axios.get('http://localhost:5000/api/notifications'),
+                axios.get('http://localhost:5000/api/students/school'),
+                axios.get('http://localhost:5000/api/teachers', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+            ]);
+
+            setResults(resultsRes.data);
+            setTests(testsRes.data);
+            setStudyMaterials(materialsRes.data);
+            setNotifications(notificationsRes.data);
+            setStudents(studentsRes.data);
+            setTeachers(teachersRes.data);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            setLoading(false);
+        }
+    };
+
+    const handleCreateNotification = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post('http://localhost:5000/api/notifications', {
+                ...notificationForm,
+                targetAudience: {
+                    classes: notificationForm.classes
+                }
+            });
+            alert('Notification created successfully!');
+            setShowNotificationForm(false);
+            setNotificationForm({
+                title: '',
+                message: '',
+                type: 'general',
+                priority: 'medium',
+                classes: [],
+                expiresAt: ''
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error creating notification:', error);
+            alert('Failed to create notification');
+        }
+    };
+
+    const handleUploadMaterial = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post('http://localhost:5000/api/study-materials', materialForm);
+            alert('Study material uploaded successfully! (Will expire in 7 days)');
+            setShowMaterialForm(false);
+            setMaterialForm({
+                title: '',
+                subject: '',
+                description: '',
+                fileUrl: '',
+                fileType: 'PDF',
+                fileSize: '',
+                class: ''
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error uploading material:', error);
+            alert('Failed to upload material');
+        }
+    };
+
+    const handleSuspendStudent = async (studentId) => {
+        if (!window.confirm('Are you sure you want to suspend this student?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                `http://localhost:5000/api/students/${studentId}/suspend`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            alert('✅ Student suspended successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error suspending student:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || 'Failed to suspend student';
+            alert('❌ ' + errorMsg);
+        }
+    };
+
+    const handleActivateStudent = async (studentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(
+                `http://localhost:5000/api/students/${studentId}/activate`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            alert('✅ Student activated successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error activating student:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || 'Failed to activate student';
+            alert('❌ ' + errorMsg);
+        }
+    };
+
+    const handleDeleteStudent = async (studentId) => {
+        if (!window.confirm('Are you sure you want to DELETE this student? This action cannot be undone!')) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(
+                `http://localhost:5000/api/students/${studentId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            alert('✅ Student deleted successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || 'Failed to delete student';
+            alert('❌ ' + errorMsg);
+        }
+    };
+
+    const handleExportResults = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/export/results', {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `student-results-${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error exporting results:', error);
+            alert('Failed to export results');
+        }
+    };
+
+    const handleDeleteNotification = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this notification?')) return;
+        try {
+            await axios.delete(`http://localhost:5000/api/notifications/${id}`);
+            alert('Notification deleted successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            alert('Failed to delete notification');
+        }
+    };
+
+    const handleDeleteMaterial = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this study material?')) return;
+        try {
+            await axios.delete(`http://localhost:5000/api/study-materials/${id}`);
+            alert('Study material deleted successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting material:', error);
+            alert('Failed to delete study material');
+        }
+    };
+
+    const handleSuspendUser = async (userId, currentStatus) => {
+        const action = currentStatus ? 'unsuspend' : 'suspend';
+        if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+        try {
+            await axios.put(`http://localhost:5000/api/admin/users/${userId}/suspend`, {
+                isSuspended: !currentStatus
+            });
+            alert(`User ${action}ed successfully!`);
+            fetchData();
+        } catch (error) {
+            console.error(`Error ${action}ing user:`, error);
+            alert(`Failed to ${action} user`);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        try {
+            await axios.delete(`http://localhost:5000/api/admin/users/${userId}`);
+            alert('User deleted successfully!');
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Failed to delete user');
+        }
+    };
+
+    const uniqueStudents = new Set(results.map(r => r.student?._id)).size;
+    const passedStudents = results.filter(r => r.percentage >= 50).length;
+    const failedStudents = results.filter(r => r.percentage < 50).length;
+
+    // Group results by class
+    const resultsByClass = results.reduce((acc, result) => {
+        const className = result.student?.class || 'Unknown Class';
+        if (!acc[className]) {
+            acc[className] = [];
+        }
+        acc[className].push(result);
+        return acc;
+    }, {});
+
+    // Sort classes
+    const sortedClasses = Object.keys(resultsByClass).sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+        return numA - numB || a.localeCompare(b);
+    });
+
+    const stats = {
+        totalStudents: students.length,
+        totalTests: tests.length,
+        avgPerformance: results.length > 0
+            ? (results.reduce((sum, r) => sum + r.percentage, 0) / results.length).toFixed(1)
+            : 0,
+        passRate: results.length > 0
+            ? ((passedStudents / results.length) * 100).toFixed(1)
+            : 0,
+        materials: studyMaterials.length,
+        notifications: notifications.filter(n => !n.isRead).length
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-gray-900">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center"
+                >
+                    <div className="relative">
+                        <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-500/20 border-t-primary-500 mx-auto mb-6"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <GraduationCap className="h-8 w-8 text-primary-400" />
+                        </div>
+                    </div>
+                    <p className="text-gray-300 text-lg font-medium">Loading dashboard...</p>
+                </motion.div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-gray-900 pt-16">
+            {/* Animated Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-1/4 -left-48 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-secondary-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+            </div>
+
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Hero Profile Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
+                    <div className="relative bg-gradient-to-r from-primary-600/20 via-secondary-600/20 to-accent-600/20 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 overflow-hidden shadow-2xl">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 via-transparent to-secondary-500/5 animate-pulse"></div>
+                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
+                        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-500/20 rounded-full blur-3xl"></div>
+
+                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-6">
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="relative w-28 h-28 bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 rounded-3xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform">
+                                        <User className="h-14 w-14 text-white" />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full border-4 border-slate-900 flex items-center justify-center shadow-lg">
+                                        <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-3">
+                                        Welcome, {user?.name}! 👋
+                                    </h1>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+                                            <GraduationCap className="h-5 w-5 text-primary-400" />
+                                            <span className="text-sm font-semibold text-white">{user?.school?.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+                                            <Calendar className="h-5 w-5 text-secondary-400" />
+                                            <span className="text-sm text-gray-300">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-full border border-purple-500/30">
+                                            <Award className="h-5 w-5 text-purple-400" />
+                                            <span className="text-sm font-semibold text-purple-300">Principal</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {results.length > 0 && (
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-2xl border border-green-500/30 shadow-xl"
+                                >
+                                    <div className="p-3 bg-green-500/20 rounded-xl">
+                                        <TrendingUp className="h-6 w-6 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-green-300 font-medium uppercase tracking-wide">School Avg</p>
+                                        <p className="text-3xl font-bold text-white">{stats.avgPerformance}%</p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                    {[
+                        { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'from-blue-500 to-cyan-500', bgColor: 'from-blue-500/20 to-cyan-500/20' },
+                        { label: 'Active Tests', value: stats.totalTests, icon: FileText, color: 'from-purple-500 to-pink-500', bgColor: 'from-purple-500/20 to-pink-500/20' },
+                        { label: 'Avg Performance', value: `${stats.avgPerformance}%`, icon: BarChart3, color: 'from-green-500 to-emerald-500', bgColor: 'from-green-500/20 to-emerald-500/20' },
+                        { label: 'Pass Rate', value: `${stats.passRate}%`, icon: Target, color: 'from-yellow-500 to-orange-500', bgColor: 'from-yellow-500/20 to-orange-500/20' },
+                        { label: 'Study Materials', value: stats.materials, icon: BookOpen, color: 'from-orange-500 to-red-500', bgColor: 'from-orange-500/20 to-red-500/20' },
+                        { label: 'Notifications', value: stats.notifications, icon: Bell, color: 'from-red-500 to-rose-500', bgColor: 'from-red-500/20 to-rose-500/20' }
+                    ].map((stat, index) => (
+                        <motion.div
+                            key={stat.label}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            onClick={() => {
+                                if (stat.label === 'Total Students') setActiveTab('students');
+                                else if (stat.label === 'Study Materials') setActiveTab('materials');
+                                else if (stat.label === 'Notifications') setActiveTab('notifications');
+                                else if (stat.label === 'Active Tests') setActiveTab('overview'); // Or a tests tab if it existed
+                            }}
+                            className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-white/20 hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                        >
+                            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color} rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                            <div className="flex flex-col items-center text-center">
+                                <div className={`p-3 bg-gradient-to-br ${stat.bgColor} rounded-xl mb-3 group-hover:scale-110 transition-transform`}>
+                                    <stat.icon className="h-6 w-6 text-white" />
+                                </div>
+                                <p className="text-gray-400 text-xs font-medium uppercase tracking-wide mb-1">{stat.label}</p>
+                                <p className="text-2xl font-bold text-white">{stat.value}</p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="mb-8">
+                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-2 inline-flex gap-2">
+                        {[
+                            { id: 'overview', label: 'Overview', icon: BarChart3 },
+                            { id: 'super-contests', label: 'Super Contests', icon: Trophy },
+                            { id: 'contest-results', label: 'Contest Results', icon: Award },
+                            { id: 'notifications', label: 'Notifications', icon: Bell },
+                            { id: 'materials', label: 'Study Materials', icon: BookOpen },
+                            { id: 'students', label: 'Students', icon: Users },
+                            { id: 'teachers', label: 'Teachers', icon: GraduationCap }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${activeTab === tab.id
+                                    ? 'bg-gradient-to-r from-primary-500 to-blue-500 text-white shadow-lg shadow-primary-500/30'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <tab.icon className="h-5 w-5" />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Tab Content */}
+                <AnimatePresence mode="wait">
+                    {activeTab === 'overview' && (
+                        <motion.div
+                            key="overview"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                        >
+                            {/* Recent Results - Class Wise Accordion */}
+                            <div className="lg:col-span-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl">
+                                            <Award className="h-6 w-6 text-green-400" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-white">Class-wise Results</h2>
+                                            <p className="text-gray-400 text-sm">Student performance by class</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {results.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <Award className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                                        <p className="text-gray-400 text-lg">No results yet</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                        {sortedClasses.map((className) => (
+                                            <div key={className} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                                                <button
+                                                    onClick={() => setExpandedClass(expandedClass === className ? null : className)}
+                                                    className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-primary-500/20 to-blue-500/20 rounded-full flex items-center justify-center">
+                                                            <Users className="h-5 w-5 text-primary-400" />
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <h3 className="font-semibold text-white text-lg">Class {className}</h3>
+                                                            <p className="text-xs text-gray-400">{resultsByClass[className].length} Students</p>
+                                                        </div>
+                                                    </div>
+                                                    {expandedClass === className ?
+                                                        <ChevronUp className="h-5 w-5 text-gray-400" /> :
+                                                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                                                    }
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {expandedClass === className && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: 'auto', opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.3 }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="p-4 pt-0 space-y-3 border-t border-white/5">
+                                                                {resultsByClass[className].map((result, index) => (
+                                                                    <motion.div
+                                                                        key={result._id}
+                                                                        initial={{ opacity: 0, x: -20 }}
+                                                                        animate={{ opacity: 1, x: 0 }}
+                                                                        transition={{ delay: index * 0.05 }}
+                                                                        className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all flex items-center justify-between"
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                                                                                <User className="h-4 w-4 text-gray-300" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-white font-medium text-sm">{result.student?.name || 'Unknown'}</p>
+                                                                                <p className="text-xs text-gray-500">{result.test?.title || 'Deleted Test'}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <span className={`text-sm font-bold ${result.percentage >= 50 ? 'text-green-400' : 'text-red-400'
+                                                                                }`}>
+                                                                                {result.percentage}%
+                                                                            </span>
+                                                                            <p className="text-xs text-gray-500">{result.score}/{result.test?.totalMarks || '-'}</p>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                ))}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                            </div>
+
+                            {/* Performance Analytics */}
+                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
+                                        <BarChart3 className="h-6 w-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">Performance</h2>
+                                        <p className="text-gray-400 text-xs">Analytics</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle2 className="h-5 w-5 text-green-400" />
+                                            <p className="text-xs text-green-300 font-medium uppercase">Passed</p>
+                                        </div>
+                                        <p className="text-3xl font-bold text-white">{passedStudents}</p>
+                                        <p className="text-xs text-gray-500 mt-1">≥ 50%</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-red-500/10 to-rose-500/10 border border-red-500/30 rounded-xl p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <XCircle className="h-5 w-5 text-red-400" />
+                                            <p className="text-xs text-red-300 font-medium uppercase">Failed</p>
+                                        </div>
+                                        <p className="text-3xl font-bold text-white">{failedStudents}</p>
+                                        <p className="text-xs text-gray-500 mt-1">&lt; 50%</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Clock className="h-5 w-5 text-blue-400" />
+                                            <p className="text-xs text-blue-300 font-medium uppercase">Total</p>
+                                        </div>
+                                        <p className="text-3xl font-bold text-white">{results.length}</p>
+                                        <p className="text-xs text-gray-500 mt-1">Submissions</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'notifications' && (
+                        <motion.div
+                            key="notifications"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-xl">
+                                        <Bell className="h-6 w-6 text-yellow-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white">Manage Notifications</h2>
+                                        <p className="text-gray-400 text-sm">Send notifications to your students</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowNotificationForm(!showNotificationForm)}
+                                    className="px-4 py-2 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    <Plus className="h-5 w-5" />
+                                    Create Notification
+                                </button>
+                            </div>
+
+                            {showNotificationForm && (
+                                <motion.form
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    onSubmit={handleCreateNotification}
+                                    className="mb-6 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={notificationForm.title}
+                                                onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                                            <select
+                                                value={notificationForm.type}
+                                                onChange={(e) => setNotificationForm({ ...notificationForm, type: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            >
+                                                <option value="general" className="text-black">General</option>
+                                                <option value="test" className="text-black">Test</option>
+                                                <option value="material" className="text-black">Material</option>
+                                                <option value="reminder" className="text-black">Reminder</option>
+                                                <option value="announcement" className="text-black">Announcement</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Target Classes</label>
+                                        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
+                                            {['All', ...Array.from({ length: 12 }, (_, i) => i + 1)].map((cls) => (
+                                                <label key={cls} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-1 rounded transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={cls === 'All'
+                                                            ? notificationForm.classes.length === 12
+                                                            : notificationForm.classes.includes(cls.toString())}
+                                                        onChange={(e) => {
+                                                            if (cls === 'All') {
+                                                                setNotificationForm({
+                                                                    ...notificationForm,
+                                                                    classes: e.target.checked
+                                                                        ? Array.from({ length: 12 }, (_, i) => (i + 1).toString())
+                                                                        : []
+                                                                });
+                                                            } else {
+                                                                const newClasses = e.target.checked
+                                                                    ? [...notificationForm.classes, cls.toString()]
+                                                                    : notificationForm.classes.filter(c => c !== cls.toString());
+                                                                setNotificationForm({ ...notificationForm, classes: newClasses });
+                                                            }
+                                                        }}
+                                                        className="rounded border-gray-600 text-primary-500 focus:ring-primary-500 bg-gray-700"
+                                                    />
+                                                    <span className="text-sm text-gray-300">{cls === 'All' ? 'All' : `Class ${cls}`}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Message</label>
+                                        <textarea
+                                            required
+                                            rows="4"
+                                            value={notificationForm.message}
+                                            onChange={(e) => setNotificationForm({ ...notificationForm, message: e.target.value })}
+                                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                        ></textarea>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                            Send Notification
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNotificationForm(false)}
+                                            className="px-6 py-2 bg-white/5 border border-white/10 text-gray-300 font-semibold rounded-xl hover:bg-white/10 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </motion.form>
+                            )}
+
+                            <div className="space-y-4">
+                                {notifications.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <Bell className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                                        <p>No notifications sent yet</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((notification) => (
+                                        <div key={notification._id} className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-xl p-4 flex justify-between items-start">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className="font-semibold text-white">{notification.title}</h3>
+                                                    <span className={`px-2 py-0.5 rounded text-xs ${notification.type === 'urgent' ? 'bg-red-500/20 text-red-300' :
+                                                        notification.type === 'test' ? 'bg-blue-500/20 text-blue-300' :
+                                                            'bg-gray-500/20 text-gray-300'
+                                                        }`}>
+                                                        {notification.type}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-400 text-sm mb-2">{notification.message}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    Sent: {new Date(notification.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteNotification(notification._id)}
+                                                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                title="Delete Notification"
+                                            >
+                                                <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-400" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'materials' && (
+                        <motion.div
+                            key="materials"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl">
+                                        <BookOpen className="h-6 w-6 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white">Study Materials</h2>
+                                        <p className="text-gray-400 text-sm">Upload materials (7-day expiry)</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowMaterialForm(!showMaterialForm)}
+                                    className="px-4 py-2 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    <Upload className="h-5 w-5" />
+                                    Upload Material
+                                </button>
+                            </div>
+
+                            {showMaterialForm && (
+                                <motion.form
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    onSubmit={handleUploadMaterial}
+                                    className="mb-6 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={materialForm.title}
+                                                onChange={(e) => setMaterialForm({ ...materialForm, title: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={materialForm.subject}
+                                                onChange={(e) => setMaterialForm({ ...materialForm, subject: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Class</label>
+                                            <select
+                                                required
+                                                value={materialForm.class}
+                                                onChange={(e) => setMaterialForm({ ...materialForm, class: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            >
+                                                <option value="" className="text-black">Select Class</option>
+                                                {[...Array(12)].map((_, i) => (
+                                                    <option key={i + 1} value={i + 1} className="text-black">Class {i + 1}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">File URL</label>
+                                        <input
+                                            type="url"
+                                            required
+                                            placeholder="https://example.com/file.pdf"
+                                            value={materialForm.fileUrl}
+                                            onChange={(e) => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
+                                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                            Upload Material
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMaterialForm(false)}
+                                            className="px-6 py-2 bg-white/5 border border-white/10 text-gray-300 font-semibold rounded-xl hover:bg-white/10 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </motion.form>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {studyMaterials.map((material) => (
+                                    <div key={material._id} className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-xl p-4 flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold text-white mb-2">{material.title}</h3>
+                                            <p className="text-sm text-gray-400 mb-2">{material.subject} • Class {material.class}</p>
+                                            {material.expiresAt && (
+                                                <p className="text-xs text-yellow-400 mt-2">
+                                                    Expires: {new Date(material.expiresAt).toLocaleDateString('en-GB')}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteMaterial(material._id)}
+                                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                            title="Delete Material"
+                                        >
+                                            <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-400" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'students' && (
+                        <motion.div
+                            key="students"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl">
+                                        <Users className="h-6 w-6 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white">Student Management</h2>
+                                        <p className="text-gray-400 text-sm">Manage student accounts</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowStudentForm(!showStudentForm)}
+                                    className="px-4 py-2 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    <Plus className="h-5 w-5" />
+                                    Add Student
+                                </button>
+                            </div>
+
+                            {showStudentForm && (
+                                <motion.form
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    onSubmit={handleAddStudent}
+                                    className="mb-6 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={studentForm.name}
+                                                onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={studentForm.email}
+                                                onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={studentForm.password}
+                                                onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Class</label>
+                                            <select
+                                                required
+                                                value={studentForm.class}
+                                                onChange={(e) => setStudentForm({ ...studentForm, class: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            >
+                                                <option value="" className="text-black">Select Class</option>
+                                                {[...Array(12)].map((_, i) => (
+                                                    <option key={i + 1} value={i + 1} className="text-black">Class {i + 1}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Roll Number</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={studentForm.rollNumber}
+                                                onChange={(e) => setStudentForm({ ...studentForm, rollNumber: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                            Register Student
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStudentForm(false)}
+                                            className="px-6 py-2 bg-white/5 border border-white/10 text-gray-300 font-semibold rounded-xl hover:bg-white/10 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </motion.form>
+                            )}
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-white/10">
+                                            <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Name</th>
+                                            <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Email</th>
+                                            <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Class</th>
+                                            <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Status</th>
+                                            <th className="text-right py-3 px-4 text-gray-400 font-medium text-sm">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {students.map((student) => (
+                                            <tr key={student._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                <td className="py-3 px-4 text-white font-medium">{student.name}</td>
+                                                <td className="py-3 px-4 text-gray-400 text-sm">{student.email}</td>
+                                                <td className="py-3 px-4 text-gray-300">{student.class}</td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${student.isSuspended
+                                                        ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                                                        : 'bg-green-500/20 text-green-300 border border-green-500/40'
+                                                        }`}>
+                                                        {student.isSuspended ? 'Suspended' : 'Active'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {student.isSuspended ? (
+                                                            <button
+                                                                onClick={() => handleActivateStudent(student._id)}
+                                                                className="p-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 rounded-lg transition-colors"
+                                                                title="Activate"
+                                                            >
+                                                                <Check className="h-4 w-4 text-green-400" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleSuspendStudent(student._id)}
+                                                                className="p-2 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-lg transition-colors"
+                                                                title="Suspend"
+                                                            >
+                                                                <Ban className="h-4 w-4 text-yellow-400" />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleDeleteStudent(student._id)}
+                                                            className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-400" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'teachers' && (
+                        <motion.div
+                            key="teachers"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
+                                        <GraduationCap className="h-6 w-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white">Teacher Management</h2>
+                                        <p className="text-gray-400 text-sm">Manage school teachers</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowTeacherForm(!showTeacherForm)}
+                                    className="px-4 py-2 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    <Plus className="h-5 w-5" />
+                                    Add Teacher
+                                </button>
+                            </div>
+
+                            {showTeacherForm && (
+                                <motion.form
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    onSubmit={handleAddTeacher}
+                                    className="mb-6 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={teacherForm.name}
+                                                onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={teacherForm.email}
+                                                onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={teacherForm.password}
+                                                onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={teacherForm.subject}
+                                                onChange={(e) => setTeacherForm({ ...teacherForm, subject: e.target.value })}
+                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary-500 focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                            Add Teacher
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTeacherForm(false)}
+                                            className="px-6 py-2 bg-white/5 border border-white/10 text-gray-300 font-semibold rounded-xl hover:bg-white/10 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </motion.form>
+                            )}
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-gray-300">
+                                    <thead className="text-xs uppercase bg-white/5 text-gray-400">
+                                        <tr>
+                                            <th className="px-6 py-3 rounded-l-xl">Name</th>
+                                            <th className="px-6 py-3">Email</th>
+                                            <th className="px-6 py-3">Subject</th>
+                                            <th className="px-6 py-3">Status</th>
+                                            <th className="px-6 py-3 rounded-r-xl text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {teachers.map((teacher) => (
+                                            <tr key={teacher._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                <td className="px-6 py-4 font-medium text-white">{teacher.name}</td>
+                                                <td className="px-6 py-4">{teacher.email}</td>
+                                                <td className="px-6 py-4">{teacher.subject || 'N/A'}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${teacher.isSuspended
+                                                        ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                                                        : 'bg-green-500/20 text-green-300 border border-green-500/40'
+                                                        }`}>
+                                                        {teacher.isSuspended ? 'Suspended' : 'Active'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={() => handleSuspendUser(teacher._id, teacher.isSuspended)}
+                                                            className={`p-2 rounded-lg transition-colors group ${teacher.isSuspended
+                                                                ? 'hover:bg-green-500/10'
+                                                                : 'hover:bg-yellow-500/10'
+                                                                }`}
+                                                            title={teacher.isSuspended ? 'Unsuspend User' : 'Suspend User'}
+                                                        >
+                                                            {teacher.isSuspended ? (
+                                                                <Check className="h-4 w-4 text-gray-400 group-hover:text-green-400" />
+                                                            ) : (
+                                                                <Ban className="h-4 w-4 text-gray-400 group-hover:text-yellow-400" />
+                                                            )}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteUser(teacher._id)}
+                                                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                            title="Delete User"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-400" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'super-contests' && (
+                        <motion.div
+                            key="super-contests"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                        >
+                            <SuperContestSection />
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'contest-results' && (
+                        <motion.div
+                            key="contest-results"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                        >
+                            <SuperContestResultsSection />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+
+                <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+            `}</style>
+            </div>
+        </div >
+    );
+};
+
+export default PrincipalDashboard;
+
