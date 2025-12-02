@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const helmet = require('helmet');
@@ -118,6 +119,17 @@ app.get('/api/seed-users', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Serve Frontend in Production
+if (process.env.NODE_ENV === 'production') {
+    // Set static folder
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+    // Any route that is not an API route will be handled by the frontend
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+    });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
