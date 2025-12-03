@@ -4,14 +4,32 @@ const sendEmail = async (options) => {
     // 1. Create Transporter
     // Use environment variables for real email, or fallback to console log for dev
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        pool: true, // Use connection pooling
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // use TLS
         auth: {
             user: process.env.EMAIL_USERNAME,
             pass: process.env.EMAIL_PASSWORD
         },
+        tls: {
+            // do not fail on invalid certs
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,   // 10 seconds
+        socketTimeout: 10000,     // 10 seconds
         logger: true,
         debug: true
     });
+
+    // Verify connection configuration
+    try {
+        await transporter.verify();
+        console.log('✅ SMTP Connection Verified Successfully');
+    } catch (error) {
+        console.error('❌ SMTP Connection Verification Failed:', error);
+    }
 
     // 2. Define Email Options
     const mailOptions = {
