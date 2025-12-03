@@ -10,7 +10,7 @@ const Contact = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:5000/api/contact', formData);
+            await axios.post('/api/contact', formData);
             setSubmitted(true);
             setFormData({ name: '', email: '', message: '' });
             setTimeout(() => setSubmitted(false), 3000);

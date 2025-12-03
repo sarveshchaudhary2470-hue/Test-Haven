@@ -51,7 +51,7 @@ const TestTaking = () => {
 
             // 1. Check if already submitted
             try {
-                const resultResponse = await axios.get(`http://localhost:5000/api/results/test/${testId}`, {
+                const resultResponse = await axios.get(`/api/results/test/${testId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (resultResponse.data) {
@@ -67,7 +67,7 @@ const TestTaking = () => {
             }
 
             // 2. Fetch Test Data
-            const response = await axios.get(`http://localhost:5000/api/tests/${testId}`, {
+            const response = await axios.get(`/api/tests/${testId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTest(response.data);
@@ -139,7 +139,7 @@ const TestTaking = () => {
 
             const percentage = (score / test.totalMarks) * 100;
 
-            await axios.post('http://localhost:5000/api/results', {
+            await axios.post('/api/results', {
                 testId: testId, // Fixed: Changed 'test' to 'testId' to match backend expectation
                 answers: responses, // Fixed: Backend expects 'answers', not 'responses'
                 timeTaken: (test.duration * 60) - timeRemaining

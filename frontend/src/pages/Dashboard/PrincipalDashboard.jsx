@@ -66,7 +66,7 @@ const PrincipalDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/students', studentForm, {
+            await axios.post('/api/students', studentForm, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -92,7 +92,7 @@ const PrincipalDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/teachers', teacherForm, {
+            await axios.post('/api/teachers', teacherForm, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -120,12 +120,12 @@ const PrincipalDashboard = () => {
     const fetchData = async () => {
         try {
             const [resultsRes, testsRes, materialsRes, notificationsRes, studentsRes, teachersRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/results/school/${user.school._id}`),
-                axios.get('http://localhost:5000/api/tests'),
-                axios.get('http://localhost:5000/api/study-materials'),
-                axios.get('http://localhost:5000/api/notifications'),
-                axios.get('http://localhost:5000/api/students/school'),
-                axios.get('http://localhost:5000/api/teachers', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+                axios.get(`/api/results/school/${user.school._id}`),
+                axios.get('/api/tests'),
+                axios.get('/api/study-materials'),
+                axios.get('/api/notifications'),
+                axios.get('/api/students/school'),
+                axios.get('/api/teachers', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
             ]);
 
             setResults(resultsRes.data);
@@ -144,7 +144,7 @@ const PrincipalDashboard = () => {
     const handleCreateNotification = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:5000/api/notifications', {
+            await axios.post('/api/notifications', {
                 ...notificationForm,
                 targetAudience: {
                     classes: notificationForm.classes
@@ -170,7 +170,7 @@ const PrincipalDashboard = () => {
     const handleUploadMaterial = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:5000/api/study-materials', materialForm);
+            await axios.post('/api/study-materials', materialForm);
             alert('Study material uploaded successfully! (Will expire in 7 days)');
             setShowMaterialForm(false);
             setMaterialForm({
@@ -194,7 +194,7 @@ const PrincipalDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.put(
-                `http://localhost:5000/api/students/${studentId}/suspend`,
+                `/api/students/${studentId}/suspend`,
                 {},
                 {
                     headers: {
@@ -216,7 +216,7 @@ const PrincipalDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.put(
-                `http://localhost:5000/api/students/${studentId}/activate`,
+                `/api/students/${studentId}/activate`,
                 {},
                 {
                     headers: {
@@ -239,7 +239,7 @@ const PrincipalDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.delete(
-                `http://localhost:5000/api/students/${studentId}`,
+                `/api/students/${studentId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -258,7 +258,7 @@ const PrincipalDashboard = () => {
 
     const handleExportResults = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/export/results', {
+            const response = await axios.get('/api/export/results', {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -278,7 +278,7 @@ const PrincipalDashboard = () => {
     const handleDeleteNotification = async (id) => {
         if (!window.confirm('Are you sure you want to delete this notification?')) return;
         try {
-            await axios.delete(`http://localhost:5000/api/notifications/${id}`);
+            await axios.delete(`/api/notifications/${id}`);
             alert('Notification deleted successfully!');
             fetchData();
         } catch (error) {
@@ -290,7 +290,7 @@ const PrincipalDashboard = () => {
     const handleDeleteMaterial = async (id) => {
         if (!window.confirm('Are you sure you want to delete this study material?')) return;
         try {
-            await axios.delete(`http://localhost:5000/api/study-materials/${id}`);
+            await axios.delete(`/api/study-materials/${id}`);
             alert('Study material deleted successfully!');
             fetchData();
         } catch (error) {
@@ -303,7 +303,7 @@ const PrincipalDashboard = () => {
         const action = currentStatus ? 'unsuspend' : 'suspend';
         if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
         try {
-            await axios.put(`http://localhost:5000/api/admin/users/${userId}/suspend`, {
+            await axios.put(`/api/admin/users/${userId}/suspend`, {
                 isSuspended: !currentStatus
             });
             alert(`User ${action}ed successfully!`);
@@ -317,7 +317,7 @@ const PrincipalDashboard = () => {
     const handleDeleteUser = async (userId) => {
         if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
         try {
-            await axios.delete(`http://localhost:5000/api/admin/users/${userId}`);
+            await axios.delete(`/api/admin/users/${userId}`);
             alert('User deleted successfully!');
             fetchData();
         } catch (error) {

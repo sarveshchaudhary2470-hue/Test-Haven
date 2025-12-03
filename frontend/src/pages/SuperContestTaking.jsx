@@ -62,7 +62,7 @@ const SuperContestTaking = () => {
             // Set a timeout of 30 seconds
             const config = { timeout: 30000 };
 
-            const response = await axios.get(`http://localhost:5000/api/super-contests/${id}`, config);
+            const response = await axios.get(`/api/super-contests/${id}`, config);
             const contestData = response.data.data;
 
             setContest(contestData);
@@ -79,7 +79,7 @@ const SuperContestTaking = () => {
 
             // Start the contest on server
             try {
-                const startResponse = await axios.post(`http://localhost:5000/api/super-contests/${id}/start`, {}, config);
+                const startResponse = await axios.post(`/api/super-contests/${id}/start`, {}, config);
                 const { startedAt, status, answers: savedAnswers } = startResponse.data.data;
 
                 // If already submitted, redirect
@@ -168,7 +168,7 @@ const SuperContestTaking = () => {
         const timeTaken = Date.now() - startTimeRef.current;
 
         try {
-            await axios.post(`http://localhost:5000/api/super-contests/${id}/submit`, {
+            await axios.post(`/api/super-contests/${id}/submit`, {
                 answers,
                 timeTaken,
                 startedAt: new Date(startTimeRef.current)
@@ -195,7 +195,7 @@ const SuperContestTaking = () => {
         const timeTaken = Date.now() - startTimeRef.current;
 
         try {
-            await axios.post(`http://localhost:5000/api/super-contests/${id}/submit`, {
+            await axios.post(`/api/super-contests/${id}/submit`, {
                 answers,
                 timeTaken,
                 startedAt: new Date(startTimeRef.current)

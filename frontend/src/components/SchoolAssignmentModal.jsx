@@ -21,7 +21,7 @@ const SchoolAssignmentModal = ({ test, onClose, onSuccess }) => {
     const fetchSchools = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/admin/schools', {
+            const response = await axios.get('/api/admin/schools', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSchools(response.data);
@@ -44,7 +44,7 @@ const SchoolAssignmentModal = ({ test, onClose, onSuccess }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/tests/${test._id}`, {
+            await axios.put(`/api/tests/${test._id}`, {
                 schools: selectedSchools
             }, {
                 headers: { Authorization: `Bearer ${token}` }

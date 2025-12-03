@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         const loadUser = async () => {
             if (token) {
                 try {
-                    const { data } = await axios.get('http://localhost:5000/api/auth/me');
+                    const { data } = await axios.get('/api/auth/me');
                     setUser(data);
                 } catch (error) {
                     console.error('Failed to load user:', error);
@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+            const { data } = await axios.post('/api/auth/login', {
                 email,
                 password
             });

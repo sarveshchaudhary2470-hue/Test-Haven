@@ -64,11 +64,11 @@ const TeacherDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             const [resultsRes, testsRes, materialsRes, notificationsRes, studentsRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/results/school/${user.school._id}`, config),
-                axios.get('http://localhost:5000/api/tests', config),
-                axios.get('http://localhost:5000/api/study-materials', config),
-                axios.get('http://localhost:5000/api/notifications', config),
-                axios.get('http://localhost:5000/api/students/school', config) // Teachers see all students in school or filter by class
+                axios.get(`/api/results/school/${user.school._id}`, config),
+                axios.get('/api/tests', config),
+                axios.get('/api/study-materials', config),
+                axios.get('/api/notifications', config),
+                axios.get('/api/students/school', config) // Teachers see all students in school or filter by class
             ]);
 
             setResults(resultsRes.data);
@@ -87,7 +87,7 @@ const TeacherDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/tests', {
+            await axios.post('/api/tests', {
                 ...testForm,
                 schools: [], // Backend expects schools array
                 questions: [] // Initialize with empty questions, add question management later
@@ -126,7 +126,7 @@ const TeacherDashboard = () => {
             console.log('🔵 Creating notification with payload:', payload);
             console.log('🔵 Token:', token ? 'Present' : 'Missing');
 
-            const response = await axios.post('http://localhost:5000/api/notifications', payload, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post('/api/notifications', payload, { headers: { Authorization: `Bearer ${token}` } });
 
             console.log('✅ Notification created successfully:', response.data);
             toast.success('✅ Notification sent successfully!');
@@ -167,7 +167,7 @@ const TeacherDashboard = () => {
             console.log('🔵 Uploading study material with payload:', payload);
             console.log('🔵 Token:', token ? 'Present' : 'Missing');
 
-            const response = await axios.post('http://localhost:5000/api/study-materials', payload, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post('/api/study-materials', payload, { headers: { Authorization: `Bearer ${token}` } });
 
             console.log('✅ Study material uploaded successfully:', response.data);
             toast.success('✅ Study material added successfully!');
@@ -196,7 +196,7 @@ const TeacherDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/notifications/${notificationId}`, {
+            await axios.delete(`/api/notifications/${notificationId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('✅ Notification deleted successfully!');
@@ -213,7 +213,7 @@ const TeacherDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/tests/${testId}`, {
+            await axios.delete(`/api/tests/${testId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('✅ Test deleted successfully!');
@@ -230,7 +230,7 @@ const TeacherDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/study-materials/${materialId}`, {
+            await axios.delete(`/api/study-materials/${materialId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('✅ Study material deleted successfully!');

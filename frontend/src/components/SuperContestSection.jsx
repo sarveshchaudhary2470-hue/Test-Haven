@@ -39,11 +39,11 @@ const SuperContestSection = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            const promises = [axios.get('http://localhost:5000/api/super-contests', config)];
+            const promises = [axios.get('/api/super-contests', config)];
 
             // Only fetch schools if user is admin or manager
             if (user && ['admin', 'manager'].includes(user.role)) {
-                promises.push(axios.get('http://localhost:5000/api/admin/schools', config));
+                promises.push(axios.get('/api/admin/schools', config));
             }
 
             const results = await Promise.all(promises);
@@ -177,7 +177,7 @@ const SuperContestSection = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.post('http://localhost:5000/api/super-contests', formData, config);
+            await axios.post('/api/super-contests', formData, config);
             alert('🏆 Super Contest created successfully!');
             setShowForm(false);
             setFormData({
@@ -208,7 +208,7 @@ const SuperContestSection = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`http://localhost:5000/api/super-contests/${id}`, config);
+            await axios.delete(`/api/super-contests/${id}`, config);
             alert('Contest and all results deleted successfully!');
             fetchData();
         } catch (error) {

@@ -15,7 +15,7 @@ const SuperContestResultsSection = () => {
 
     const fetchContests = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/super-contests');
+            const response = await axios.get('/api/super-contests');
             const contestData = response.data.data || [];
             setContests(contestData);
             setLoading(false);
@@ -31,7 +31,7 @@ const SuperContestResultsSection = () => {
         }
 
         try {
-            const response = await axios.get(`http://localhost:5000/api/super-contests/${contestId}/results`);
+            const response = await axios.get(`/api/super-contests/${contestId}/results`);
             setResults(prev => ({
                 ...prev,
                 [contestId]: response.data.data || []

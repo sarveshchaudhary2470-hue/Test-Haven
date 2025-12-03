@@ -29,7 +29,7 @@ const TestPaper = () => {
 
     const fetchTest = async () => {
         try {
-            const { data } = await axios.get(`http://localhost:5000/api/tests/${testId}`);
+            const { data } = await axios.get(`/api/tests/${testId}`);
             setTest(data);
             setTimeLeft(data.duration * 60);
             setLoading(false);
@@ -62,7 +62,7 @@ const TestPaper = () => {
         }));
 
         try {
-            await axios.post('http://localhost:5000/api/results', {
+            await axios.post('/api/results', {
                 testId: test._id,
                 answers: formattedAnswers,
                 timeTaken

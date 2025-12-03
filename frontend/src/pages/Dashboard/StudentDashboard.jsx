@@ -31,11 +31,11 @@ const StudentDashboard = () => {
     const fetchData = async () => {
         try {
             const [testsRes, resultsRes, materialsRes, notificationsRes, contestsRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/tests'),
-                axios.get('http://localhost:5000/api/results/my-results'),
-                axios.get('http://localhost:5000/api/study-materials'),
-                axios.get('http://localhost:5000/api/notifications'),
-                axios.get('http://localhost:5000/api/super-contests')
+                axios.get('/api/tests'),
+                axios.get('/api/results/my-results'),
+                axios.get('/api/study-materials'),
+                axios.get('/api/notifications'),
+                axios.get('/api/super-contests')
             ]);
 
             setTests(testsRes.data);
@@ -66,7 +66,7 @@ const StudentDashboard = () => {
     const handleViewResult = async (resultId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/api/results/test/${resultId}`, {
+            const response = await axios.get(`/api/results/test/${resultId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSelectedResult(response.data);
@@ -81,7 +81,7 @@ const StudentDashboard = () => {
             const token = localStorage.getItem('token');
             // Mark notification as read
             if (!notification.isRead) {
-                await axios.put(`http://localhost:5000/api/notifications/${notification._id}/read`, {}, {
+                await axios.put(`/api/notifications/${notification._id}/read`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 // Refresh notifications
@@ -542,7 +542,7 @@ const StudentDashboard = () => {
                                         onClick={() => {
                                             const url = material.fileUrl.startsWith('http')
                                                 ? material.fileUrl
-                                                : `http://localhost:5000${material.fileUrl}`;
+                                                : `${material.fileUrl}`;
                                             window.open(url, '_blank');
                                         }}
                                         className="group bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-xl p-4 hover:border-orange-500/30 hover:shadow-lg transition-all duration-300 cursor-pointer"

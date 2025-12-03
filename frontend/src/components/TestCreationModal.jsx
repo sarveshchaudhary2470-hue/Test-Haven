@@ -33,7 +33,7 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
     const fetchSchools = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/admin/schools', {
+            const response = await axios.get('/api/admin/schools', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSchools(response.data);
@@ -57,7 +57,7 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
                 ...testForm,
                 schools: testForm.targetSchools
             };
-            await axios.post('http://localhost:5000/api/tests', payload, {
+            await axios.post('/api/tests', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ Test created successfully!');

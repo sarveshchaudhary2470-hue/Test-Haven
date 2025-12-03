@@ -107,13 +107,13 @@ const AdminDashboard = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const [schoolsRes, usersRes, testsRes, managersRes, teachersRes, resultsRes, messagesRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/admin/schools', config),
-                axios.get('http://localhost:5000/api/admin/users', config),
-                axios.get('http://localhost:5000/api/tests', config),
-                axios.get('http://localhost:5000/api/managers', config),
-                axios.get('http://localhost:5000/api/teachers', config),
-                axios.get('http://localhost:5000/api/results', config),
-                axios.get('http://localhost:5000/api/contact', config)
+                axios.get('/api/admin/schools', config),
+                axios.get('/api/admin/users', config),
+                axios.get('/api/tests', config),
+                axios.get('/api/managers', config),
+                axios.get('/api/teachers', config),
+                axios.get('/api/results', config),
+                axios.get('/api/contact', config)
             ]);
 
             setSchools(schoolsRes.data);
@@ -144,7 +144,7 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/schools', schoolForm, {
+            await axios.post('/api/admin/schools', schoolForm, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ School created successfully!');
@@ -161,7 +161,7 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/users', { ...userForm, role: userModalType }, {
+            await axios.post('/api/admin/users', { ...userForm, role: userModalType }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert(`✅ ${userModalType.charAt(0).toUpperCase() + userModalType.slice(1)} created successfully!`);
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
     const handleSuspendUser = async (userId, currentStatus) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/users/${userId}/suspend`,
+            await axios.put(`/api/admin/users/${userId}/suspend`,
                 { isSuspended: !currentStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+            await axios.delete(`/api/admin/users/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ User deleted successfully!');
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/tests/${testId}`, {
+            await axios.delete(`/api/tests/${testId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ Test deleted successfully!');
@@ -229,7 +229,7 @@ const AdminDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/schools/${schoolId}`, {
+            await axios.delete(`/api/admin/schools/${schoolId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ School deleted successfully!');
@@ -243,7 +243,7 @@ const AdminDashboard = () => {
     const handleSuspendSchool = async (schoolId, currentStatus) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/schools/${schoolId}`,
+            await axios.put(`/api/admin/schools/${schoolId}`,
                 { isActive: !currentStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
         if (window.confirm('Are you sure you want to delete this message?')) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/contact/${id}`, {
+                await axios.delete(`/api/contact/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setMessages(messages.filter(msg => msg._id !== id));

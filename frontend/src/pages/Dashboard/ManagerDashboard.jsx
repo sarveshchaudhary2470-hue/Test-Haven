@@ -63,10 +63,10 @@ const ManagerDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             const [resultsRes, testsRes, schoolsRes, messagesRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/results', config), // Manager sees all results
-                axios.get('http://localhost:5000/api/tests', config),
-                axios.get('http://localhost:5000/api/admin/schools', config), // Need endpoint to get schools
-                axios.get('http://localhost:5000/api/contact', config)
+                axios.get('/api/results', config), // Manager sees all results
+                axios.get('/api/tests', config),
+                axios.get('/api/admin/schools', config), // Need endpoint to get schools
+                axios.get('/api/contact', config)
             ]);
 
             setResults(resultsRes.data);
@@ -84,7 +84,7 @@ const ManagerDashboard = () => {
         if (window.confirm('Are you sure you want to delete this test?')) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/tests/${testId}`, {
+                await axios.delete(`/api/tests/${testId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTests(tests.filter(test => test._id !== testId));
@@ -100,7 +100,7 @@ const ManagerDashboard = () => {
         if (window.confirm('Are you sure you want to delete this message?')) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/contact/${id}`, {
+                await axios.delete(`/api/contact/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setMessages(messages.filter(msg => msg._id !== id));

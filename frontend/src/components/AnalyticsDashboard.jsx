@@ -30,9 +30,9 @@ const AnalyticsDashboard = ({ testId }) => {
             const headers = { Authorization: `Bearer ${token}` };
 
             const [questionsRes, classRes, topRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/analytics/test/${testId}/questions`, { headers }),
-                axios.get(`http://localhost:5000/api/analytics/test/${testId}/class-comparison`, { headers }),
-                axios.get(`http://localhost:5000/api/analytics/test/${testId}/top-performers`, { headers })
+                axios.get(`/api/analytics/test/${testId}/questions`, { headers }),
+                axios.get(`/api/analytics/test/${testId}/class-comparison`, { headers }),
+                axios.get(`/api/analytics/test/${testId}/top-performers`, { headers })
             ]);
 
             setStats({

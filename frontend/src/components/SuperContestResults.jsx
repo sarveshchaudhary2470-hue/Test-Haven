@@ -15,8 +15,8 @@ const SuperContestResults = ({ contestId, onClose }) => {
     const fetchResults = async () => {
         try {
             const [resultsRes, contestRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/super-contests/${contestId}/results`),
-                axios.get(`http://localhost:5000/api/super-contests/${contestId}`)
+                axios.get(`/api/super-contests/${contestId}/results`),
+                axios.get(`/api/super-contests/${contestId}`)
             ]);
 
             setResults(resultsRes.data.data || []);
