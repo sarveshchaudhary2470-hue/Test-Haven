@@ -1,58 +1,40 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const sendEmail = async (options) => {
-    // 1. Create Transporter
-    // Switching to Brevo (Sendinblue) as Gmail blocks cloud IP addresses
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: process.env.SMTP_USER || process.env.EMAIL_USERNAME, // Your Brevo Login Email
-            pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD  // Your Brevo SMTP Key
-        },
-        tls: {
-            rejectUnauthorized: false
-        },
-        logger: true,
-        debug: true
-    });
+    // Use Brevo (Sendinblue) HTTP API to avoid SMTP port blocking
+    // This uses standard HTTPS (Port 443) which is never blocked
 
-    // Verify connection configuration
-    try {
-        await transporter.verify();
-        console.log('✅ SMTP Connection Verified Successfully');
-    } catch (error) {
-        console.error('❌ SMTP Connection Verification Failed:', error);
+    const apiKey = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS;
+    const senderEmail = process.env.EMAIL_FROM || process.env.EMAIL_USERNAME || 'noreply@testhaven.com';
+    const senderName = 'TestHaven Support';
+
+    if (!apiKey) {
+        console.error('❌ EMAIL_PASSWORD (API Key) is missing in environment variables');
+        return;
     }
 
-    // 2. Define Email Options
-    const mailOptions = {
-        from: `TestHaven Support <${process.env.EMAIL_FROM || 'noreply@testhaven.com'}>`,
-        to: options.email,
+    const emailData = {
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: options.email }],
         subject: options.subject,
-        text: options.message,
-        html: options.html // Optional: for HTML emails
+        htmlContent: options.html || options.message,
+        textContent: options.message
     };
 
-    // 3. Send Email
     try {
-        if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
-            console.log('=================================================');
-            console.log('⚠️  EMAIL CREDENTIALS MISSING IN .env');
-            console.log(`📧  To: ${options.email}`);
-            console.log(`📝  Subject: ${options.subject}`);
-            console.log(`💬  Message: ${options.message}`);
-            console.log('=================================================');
-            return; // Don't attempt to send if no creds
-        }
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            }
+        });
 
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent to ${options.email}`);
+        console.log(`✅ Email sent successfully via API to ${options.email}`);
+        console.log('Response:', response.data);
     } catch (error) {
-        console.error('❌ Email send failed:', error);
-        // We don't throw error here to avoid crashing the request if email fails
-        // But in production, you might want to handle this differently
+        console.error('❌ Email API Error:', error.response?.data || error.message);
+        // Don't throw to avoid crashing the request
     }
 };
 
