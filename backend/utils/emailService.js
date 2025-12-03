@@ -4,11 +4,19 @@ const sendEmail = async (options) => {
     // 1. Create Transporter
     // Use environment variables for real email, or fallback to console log for dev
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USERNAME,
             pass: process.env.EMAIL_PASSWORD
-        }
+        },
+        tls: {
+            rejectUnauthorized: false
+        },
+        family: 4, // Force IPv4
+        logger: true,
+        debug: true
     });
 
     // 2. Define Email Options
