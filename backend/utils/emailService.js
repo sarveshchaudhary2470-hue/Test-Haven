@@ -2,24 +2,20 @@ const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
     // 1. Create Transporter
-    // Use environment variables for real email, or fallback to console log for dev
+    // Switching to Brevo (Sendinblue) as Gmail blocks cloud IP addresses
     const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: false, // true for 465, false for other ports
         auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD
+            user: process.env.SMTP_USER || process.env.EMAIL_USERNAME, // Your Brevo Login Email
+            pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD  // Your Brevo SMTP Key
         },
         tls: {
-            ciphers: 'SSLv3',
             rejectUnauthorized: false
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        debug: true,
-        logger: true
+        logger: true,
+        debug: true
     });
 
     // Verify connection configuration
