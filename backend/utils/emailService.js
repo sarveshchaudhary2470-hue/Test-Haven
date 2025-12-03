@@ -4,23 +4,22 @@ const sendEmail = async (options) => {
     // 1. Create Transporter
     // Use environment variables for real email, or fallback to console log for dev
     const transporter = nodemailer.createTransport({
-        pool: true, // Use connection pooling
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, // use TLS
+        port: 587,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USERNAME,
             pass: process.env.EMAIL_PASSWORD
         },
         tls: {
-            // do not fail on invalid certs
+            ciphers: 'SSLv3',
             rejectUnauthorized: false
         },
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000,   // 10 seconds
-        socketTimeout: 10000,     // 10 seconds
-        logger: true,
-        debug: true
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        debug: true,
+        logger: true
     });
 
     // Verify connection configuration
