@@ -32,6 +32,9 @@ testScheduler.start();
 
 const app = express();
 
+// Trust proxy for Render deployment
+app.set('trust proxy', 1);
+
 // Middleware
 app.use((req, res, next) => {
     console.log(`[GLOBAL LOG] ${req.method} ${req.url}`);
