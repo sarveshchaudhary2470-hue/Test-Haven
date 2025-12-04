@@ -867,60 +867,48 @@ const AdminDashboard = () => {
                                                 required
                                                 value={userForm.school}
                                                 onChange={e => setUserForm({ ...userForm, school: e.target.value })}
-                                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500"
-                                            >
-                                                <option value="" className="text-black">Select School</option>
-                                                {schools.map(school => (
-                                                    <option key={school._id} value={school._id} className="text-black">{school.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Student Specific Fields */}
-                                    {userModalType === 'student' && (
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm text-gray-400 mb-1">Class</label>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max="12"
-                                                    required
-                                                    value={userForm.class}
-                                                    onChange={e => setUserForm({ ...userForm, class: e.target.value })}
-                                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500"
-                                                />
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-1">Class</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="12"
+                                                        required
+                                                        value={userForm.class}
+                                                        onChange={e => setUserForm({ ...userForm, class: e.target.value })}
+                                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-1">Roll Number</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={userForm.rollNumber}
+                                                        onChange={e => setUserForm({ ...userForm, rollNumber: e.target.value })}
+                                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-sm text-gray-400 mb-1">Roll Number</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={userForm.rollNumber}
-                                                    onChange={e => setUserForm({ ...userForm, rollNumber: e.target.value })}
-                                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500"
-                                                />
-                                            </div>
-                                        </div>
                                     )}
 
-                                    <div className="flex gap-4 mt-8">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowUserModal(false)}
-                                            className="flex-1 bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 rounded-xl transition-colors"
-                                        >
-                                            Create {userModalType}
-                                        </button>
-                                    </div>
-                                </form>
+                                            <div className="flex gap-4 mt-8">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowUserModal(false)}
+                                                    className="flex-1 bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 rounded-xl transition-colors"
+                                                >
+                                                    Create {userModalType}
+                                                </button>
+                                            </div>
+                                        </form>
                             </motion.div>
                         </div>
                     )}
