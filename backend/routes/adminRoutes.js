@@ -93,7 +93,7 @@ router.delete('/schools/:id', protect, authorize('admin'), async (req, res) => {
 // @access  Private/Admin
 router.post('/users', protect, authorize('admin'), async (req, res) => {
     try {
-        let { name, email, password, role, school, class: userClass, rollNumber, phoneNumber } = req.body;
+        let { name, email, password, role, school, class: userClass, rollNumber, phoneNumber, subject } = req.body;
 
         // Sanitize fields to prevent CastErrors
         if (school === '') school = undefined;
@@ -112,7 +112,8 @@ router.post('/users', protect, authorize('admin'), async (req, res) => {
             school,
             class: userClass,
             rollNumber,
-            phoneNumber
+            phoneNumber,
+            subject
         });
 
         const userResponse = await User.findById(user._id).select('-password').populate('school', 'name code');
