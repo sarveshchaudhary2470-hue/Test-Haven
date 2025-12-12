@@ -158,8 +158,8 @@ const SuperContestSection = () => {
             return;
         }
 
-        if (formData.questions.length < 5) {
-            alert('Please add at least 5 questions');
+        if (formData.questions.length < 1) {
+            alert('Please add at least 1 question');
             return;
         }
 
@@ -177,7 +177,15 @@ const SuperContestSection = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.post('/api/super-contests', formData, config);
+
+            // Create payload with ISO formatted date strings to handle timezone correctly
+            const payload = {
+                ...formData,
+                startTime: new Date(formData.startTime).toISOString(),
+                endTime: new Date(formData.endTime).toISOString()
+            };
+
+            await axios.post('/api/super-contests', payload, config);
             alert('🏆 Super Contest created successfully!');
             setShowForm(false);
             setFormData({
@@ -564,7 +572,7 @@ const SuperContestSection = () => {
                                 {/* Questions */}
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
-                                        <label className="block text-sm font-medium text-gray-300">Questions (min 5) *</label>
+                                        <label className="block text-sm font-medium text-gray-300">Questions (min 1) *</label>
                                         <div className="flex gap-2">
                                             {formData.questions.length > 0 && (
                                                 <button
