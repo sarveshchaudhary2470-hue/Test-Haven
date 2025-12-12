@@ -21,6 +21,7 @@ const managerRoutes = require('./routes/managers');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const superContestRoutes = require('./routes/superContestRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const { protect } = require('./middleware/authMiddleware');
 const testScheduler = require('./services/testScheduler');
 
@@ -68,6 +69,7 @@ app.use('/api/managers', managerRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/super-contests', superContestRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

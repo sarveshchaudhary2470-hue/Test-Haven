@@ -3,9 +3,10 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Trophy, Plus, Trash2, Users, Clock, Calendar, Award,
-    Target, Zap, Star, Crown, Medal, X, Check, Shuffle, Hash, School, Upload, Download
+    Target, Zap, Star, Crown, Medal, X, Check, Shuffle, Hash, School, Upload, Download, Sparkles
 } from 'lucide-react';
 import { downloadTemplate, parseQuestionsFromExcel } from '../utils/excelUtils';
+import AIGenerationModal from './AIGenerationModal';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -94,6 +95,24 @@ const SuperContestSection = () => {
         } finally {
             e.target.value = ''; // Reset
         }
+    };
+
+    const handleAIGeneratedQuestions = (generatedQuestions) => {
+        setFormData(prev => {
+            const isDefault = prev.questions.length === 1 &&
+                !prev.questions[0].question &&
+                prev.questions[0].options.every(opt => opt === '');
+
+            const newQuestions = isDefault
+                ? generatedQuestions
+                : [...prev.questions, ...generatedQuestions];
+
+            return {
+                ...prev,
+                questions: newQuestions
+            };
+        });
+        alert(`✨ AI successfully generated ${generatedQuestions.length} questions!`);
     };
 
     const handleBulkAddQuestions = () => {
@@ -613,6 +632,14 @@ const SuperContestSection = () => {
                                             )}
                                             <button
                                                 type="button"
+                                                onClick={() => setShowAIModal(true)}
+                                                className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 rounded-lg text-purple-300 font-semibold transition-all flex items-center gap-2"
+                                            >
+                                                <Sparkles className="h-4 w-4" />
+                                                Generate AI
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={downloadTemplate}
                                                 className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-gray-300 font-semibold transition-all flex items-center gap-2"
                                             >
@@ -735,6 +762,16 @@ const SuperContestSection = () => {
                             </form>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showAIModal && (
+                    <AIGenerationModal
+                        onClose={() => setShowAIModal(false)}
+                        onGenerate={handleAIGeneratedQuestions}
+                        defaultSubject={formData.title} // Use title as fallback hint
+                    />
                 )}
             </AnimatePresence>
         </div>
