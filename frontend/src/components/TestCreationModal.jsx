@@ -55,7 +55,9 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
             const token = localStorage.getItem('token');
             const payload = {
                 ...testForm,
-                schools: testForm.targetSchools
+                schools: testForm.targetSchools,
+                scheduledPublishAt: testForm.scheduledPublishAt ? new Date(testForm.scheduledPublishAt).toISOString() : undefined,
+                scheduledCloseAt: testForm.scheduledCloseAt ? new Date(testForm.scheduledCloseAt).toISOString() : undefined
             };
             await axios.post('/api/tests', payload, {
                 headers: { Authorization: `Bearer ${token}` }

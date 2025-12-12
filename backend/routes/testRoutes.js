@@ -8,7 +8,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // @access  Private/Admin/Manager/Teacher
 router.post('/', protect, authorize('admin', 'manager', 'teacher'), async (req, res) => {
     try {
-        const { title, description, class: testClass, subject, duration, totalMarks, questions, schools, scheduledDate } = req.body;
+        const { title, description, class: testClass, subject, duration, totalMarks, questions, schools, scheduledDate, scheduledPublishAt, scheduledCloseAt, randomizeQuestions, randomizeOptions } = req.body;
 
         let assignedSchools = schools;
 
@@ -27,8 +27,13 @@ router.post('/', protect, authorize('admin', 'manager', 'teacher'), async (req, 
             duration,
             totalMarks,
             questions,
+            questions,
             schools: assignedSchools,
             scheduledDate,
+            scheduledPublishAt,
+            scheduledCloseAt,
+            randomizeQuestions,
+            randomizeOptions,
             createdBy: req.user._id
         });
 
