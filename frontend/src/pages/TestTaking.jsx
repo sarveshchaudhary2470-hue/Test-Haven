@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Clock, ChevronLeft, ChevronRight, Flag, CheckCircle, AlertCircle,
-    Languages, X, Check, FileText, Award
+    Languages, X, Check, FileText, Award, Maximize, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from '../utils/toast';
@@ -23,6 +23,8 @@ const TestTaking = () => {
     const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [flaggedQuestions, setFlaggedQuestions] = useState(new Set());
+    const [warnings, setWarnings] = useState(0);
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
     useEffect(() => {
         fetchTest();
@@ -44,6 +46,64 @@ const TestTaking = () => {
             handleAutoSubmit();
         }
     }, [timeRemaining, submitting, test]);
+
+    // Proctoring Logic
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                handleWarning("Tab switching is not allowed!");
+            }
+        };
+
+        const handleFullScreenChange = () => {
+            const isFull = !!document.fullscreenElement;
+            setIsFullScreen(isFull);
+            if (!isFull && !loading && test) {
+                // Optional: specific logic when they exit full screen
+            }
+        };
+
+        const preventCopy = (e) => {
+            e.preventDefault();
+            handleWarning("Copying content is disabled!");
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('fullscreenchange', handleFullScreenChange);
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('copy', preventCopy);
+        document.addEventListener('cut', preventCopy);
+        document.addEventListener('paste', preventCopy);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            document.removeEventListener('contextmenu', (e) => e.preventDefault());
+            document.removeEventListener('copy', preventCopy);
+            document.removeEventListener('cut', preventCopy);
+            document.removeEventListener('paste', preventCopy);
+        };
+    }, [loading, test]);
+
+    const handleWarning = (msg) => {
+        setWarnings(prev => {
+            const newCount = prev + 1;
+            if (newCount >= 3) {
+                alert("Maximum warnings exceeded! Auto-submitting test.");
+                handleAutoSubmit();
+            } else {
+                alert(`⚠️ WARNING ${newCount}/3: ${msg}`);
+            }
+            return newCount;
+        });
+    };
+
+    const enterFullScreen = () => {
+        document.documentElement.requestFullscreen().catch((e) => {
+            console.error(e);
+            alert("Could not enter full screen. Please try again.");
+        });
+    };
 
     const fetchTest = async () => {
         try {
@@ -205,6 +265,26 @@ const TestTaking = () => {
     const question = test.questions[currentQuestion];
     const answeredCount = Object.keys(answers).length;
     const progress = (answeredCount / test.questions.length) * 100;
+
+    if (!isFullScreen && !loading && !submitting) {
+        return (
+            <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-4">
+                <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4 animate-bounce" />
+                <h1 className="text-2xl font-bold text-white mb-2">Security Violation</h1>
+                <p className="text-gray-400 mb-8 text-center max-w-md">
+                    This test must be taken in Full Screen mode.
+                    Exiting full screen or switching tabs is monitored.
+                </p>
+                <button
+                    onClick={enterFullScreen}
+                    className="bg-primary-500 hover:bg-primary-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary-500/25 flex items-center gap-2"
+                >
+                    <Maximize size={20} />
+                    Enable Full Screen to Continue
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-gray-900 pt-24">

@@ -206,6 +206,77 @@ class AnalyticsService {
             throw error;
         }
     }
+
+    // Get comprehensive analytics for a student dashboard
+    async getStudentAnalytics(studentId) {
+        try {
+            const results = await Result.find({ student: studentId })
+                .populate('test', 'title subject totalMarks');
+
+            const stats = {
+                totalTests: results.length,
+                averagePercentage: 0,
+                testsPassed: 0,
+                totalTimeSpent: 0,
+                subjectPerformance: [],
+                recentActivity: []
+            };
+
+            if (results.length === 0) return stats;
+
+            let totalPercentage = 0;
+            const subjectMap = {};
+
+            results.forEach(result => {
+                // Overall Stats
+                totalPercentage += result.percentage;
+                if (result.isPassed) stats.testsPassed++;
+                stats.totalTimeSpent += result.timeTaken || 0;
+
+                // Subject Stats
+                const subject = result.test?.subject || 'Unknown';
+                if (!subjectMap[subject]) {
+                    subjectMap[subject] = {
+                        subject,
+                        totalPercentage: 0,
+                        count: 0,
+                        passed: 0
+                    };
+                }
+                subjectMap[subject].totalPercentage += result.percentage;
+                subjectMap[subject].count++;
+                if (result.isPassed) subjectMap[subject].passed++;
+            });
+
+            // Calculate Averages
+            stats.averagePercentage = (totalPercentage / results.length).toFixed(2);
+
+            // Format Subject Stats
+            stats.subjectPerformance = Object.values(subjectMap).map(s => ({
+                subject: s.subject,
+                average: (s.totalPercentage / s.count).toFixed(2),
+                testsTaken: s.count,
+                passRate: ((s.passed / s.count) * 100).toFixed(0)
+            }));
+
+            // Recent Activity (Last 5)
+            stats.recentActivity = results
+                .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+                .slice(0, 5)
+                .map(r => ({
+                    testName: r.test?.title || 'Unknown Test',
+                    subject: r.test?.subject || 'General',
+                    score: r.score,
+                    percentage: r.percentage,
+                    date: r.submittedAt
+                }));
+
+            return stats;
+        } catch (error) {
+            console.error('Error in student analytics:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = new AnalyticsService();

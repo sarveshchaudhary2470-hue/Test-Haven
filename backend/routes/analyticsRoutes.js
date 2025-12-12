@@ -77,4 +77,14 @@ router.get('/school/:schoolId/performance', protect, authorize('admin', 'princip
     }
 });
 
+// Get comprehensive student stats
+router.get('/student/dashboard-stats', protect, async (req, res) => {
+    try {
+        const stats = await analyticsService.getStudentAnalytics(req.user.id);
+        res.json(stats);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching dashboard stats', error: error.message });
+    }
+});
+
 module.exports = router;
