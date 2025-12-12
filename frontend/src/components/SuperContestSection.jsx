@@ -148,7 +148,8 @@ const SuperContestSection = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.school) {
+        // Only validate school selection for admin/manager
+        if (['admin', 'manager'].includes(user?.role) && !formData.school) {
             alert('Please select a school');
             return;
         }
