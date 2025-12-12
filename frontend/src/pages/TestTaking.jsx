@@ -184,6 +184,24 @@ const TestTaking = () => {
         );
     }
 
+    if (!test.questions || test.questions.length === 0) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-gray-900 pt-24 flex items-center justify-center">
+                <div className="text-center p-8 bg-white/5 rounded-2xl border border-white/10">
+                    <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">No Questions Found</h2>
+                    <p className="text-gray-400 mb-6">This test does not contain any questions.</p>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-2 bg-primary-500 hover:bg-primary-600 rounded-xl text-white transition-colors"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const question = test.questions[currentQuestion];
     const answeredCount = Object.keys(answers).length;
     const progress = (answeredCount / test.questions.length) * 100;

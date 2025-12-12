@@ -50,6 +50,11 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
             return;
         }
 
+        if (testForm.questions.length === 0) {
+            alert('Please add at least 1 question');
+            return;
+        }
+
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
