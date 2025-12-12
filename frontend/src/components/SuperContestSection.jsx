@@ -3,8 +3,9 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Trophy, Plus, Trash2, Users, Clock, Calendar, Award,
-    Target, Zap, Star, Crown, Medal, X, Check, Shuffle, Hash, School
+    Target, Zap, Star, Crown, Medal, X, Check, Shuffle, Hash, School, Upload, Download
 } from 'lucide-react';
+import { downloadTemplate, parseQuestionsFromExcel } from '../utils/excelUtils';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -68,6 +69,31 @@ const SuperContestSection = () => {
                 ? prev.classes.filter(c => c !== classNum)
                 : [...prev.classes, classNum]
         }));
+    };
+
+    // Handler for File Upload
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const parsedQuestions = await parseQuestionsFromExcel(file);
+
+            setFormData(prev => {
+                const newQuestions = [...prev.questions, ...parsedQuestions];
+                return {
+                    ...prev,
+                    questions: newQuestions
+                };
+            });
+
+            alert(`✅ Successfully added ${parsedQuestions.length} questions from Excel!`);
+        } catch (error) {
+            console.error(error);
+            alert(`❌ Error parsing Excel: ${error.message}`);
+        } finally {
+            e.target.value = ''; // Reset
+        }
     };
 
     const handleBulkAddQuestions = () => {
@@ -585,6 +611,26 @@ const SuperContestSection = () => {
                                                     Shuffle All
                                                 </button>
                                             )}
+                                            <button
+                                                type="button"
+                                                onClick={downloadTemplate}
+                                                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-gray-300 font-semibold transition-all flex items-center gap-2"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                                Template
+                                            </button>
+
+                                            <label className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded-lg text-green-300 font-semibold transition-all flex items-center gap-2 cursor-pointer">
+                                                <Upload className="h-4 w-4" />
+                                                Upload Excel
+                                                <input
+                                                    type="file"
+                                                    accept=".xlsx, .xls"
+                                                    className="hidden"
+                                                    onChange={handleFileUpload}
+                                                />
+                                            </label>
+
                                             <button
                                                 type="button"
                                                 onClick={handleAddQuestion}
