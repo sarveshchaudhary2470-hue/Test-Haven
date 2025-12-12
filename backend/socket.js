@@ -132,6 +132,18 @@ const initSocket = (server) => {
             for (const cls in waitingQueue) {
                 waitingQueue[cls] = waitingQueue[cls].filter(s => s.id !== socket.id);
             }
+
+            // Remove from Active Rooms
+            // Inefficient O(N) but activeRooms count is manageable for MVP
+            for (const roomId in activeRooms) {
+                const room = activeRooms[roomId];
+                if (room.players[socket.id]) {
+                    // Notify Opponent
+                    io.to(roomId).emit('opponent_disconnected');
+                    delete activeRooms[roomId];
+                }
+            }
+
             console.log("User disconnected");
         });
     });

@@ -19,7 +19,7 @@ import TestPaper from './pages/TestPaper';
 import TestTaking from './pages/TestTaking';
 import SuperContestTaking from './pages/SuperContestTaking';
 import BattleLobby from './pages/BattleLobby';
-import BattleArena from './pages/BattleArena';
+// import BattleArena from './pages/BattleArena'; // DELETED
 import { Toaster } from 'react-hot-toast';
 
 // Protected Route Component
@@ -136,14 +136,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/battle/:roomId"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <BattleArena />
-              </ProtectedRoute>
-            }
-          />
+          {/* BattleArena Removed as checks are now inside BattleLobby */}
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

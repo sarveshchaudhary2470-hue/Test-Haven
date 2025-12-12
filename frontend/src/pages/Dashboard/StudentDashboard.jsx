@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+
 import ResultDetailsModal from '../../components/ResultDetailsModal';
 import StudentAnalytics from '../../components/StudentAnalytics';
 
