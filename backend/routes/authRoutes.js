@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
         const { email, password } = req.body;
 
         // Check if user exists
-        const user = await User.findOne({ email }).populate('school', 'name code');
+        const user = await User.findOne({ email }).populate('school', 'name code isBattleEnabled');
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -59,7 +59,7 @@ router.post('/login', async (req, res) => {
 // @access  Private
 router.get('/me', protect, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('-password').populate('school', 'name code');
+        const user = await User.findById(req.user._id).select('-password').populate('school', 'name code isBattleEnabled');
         res.json(user);
     } catch (error) {
         console.error(error);

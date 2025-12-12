@@ -333,6 +333,39 @@ const StudentDashboard = () => {
                                     )}
                                 </motion.div>
 
+                                {/* Battle Arena Entry Card (Conditional) */}
+                                {user?.school?.isBattleEnabled && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="mb-8 relative overflow-hidden rounded-3xl p-1 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-2xl cursor-pointer group"
+                                        onClick={() => navigate('/battle')}
+                                    >
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
+
+                                        <div className="relative bg-black/40 backdrop-blur-md rounded-[20px] p-6 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-white/10 rounded-2xl border border-white/20 group-hover:scale-110 transition-transform">
+                                                    <Trophy className="w-8 h-8 text-yellow-400" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black italic text-white uppercase tracking-wider group-hover:text-yellow-400 transition-colors">
+                                                        Battle Arena
+                                                    </h3>
+                                                    <p className="text-purple-200 font-medium">Fight for your School's Glory!</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full border border-white/20 group-hover:bg-white/20 transition-colors">
+                                                <span className="text-white font-bold">ENTER NOW</span>
+                                                <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
                                 {/* Super Contests */}
                                 {superContests.length > 0 && (
                                     <motion.div

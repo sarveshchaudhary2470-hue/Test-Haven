@@ -77,4 +77,40 @@ const generateQuestions = async (req, res) => {
     }
 };
 
-module.exports = { generateQuestions };
+/**
+ * Generate Rapid Battle Questions for 1v1 Arena
+ * @input className, subject (optional)
+ * @returns 20 Questions JSON
+ */
+const generateBattleQuestions = async (className) => {
+    try {
+        if (!process.env.GEMINI_API_KEY) throw new Error("Gemini API Key missing");
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+        const prompt = `
+            Act as a Quiz Master for a 1v1 Battle Arena.
+            Generate 20 Short & Tricky Multiple Choice Questions for Class ${className} students.
+            Mix subjects: Science (6), Math (6), General Knowledge (4), English (4).
+
+            Rules:
+            1. Questions must be ONE LINE only (for fast reading).
+            2. Options must be short (1-3 words).
+            3. Return strictly a JSON array.
+            4. JSON Keys: "question", "options" (4 strings), "correctAnswer" (0-3).
+            
+            Example: [{"question":"Capital of India?","options":["Delhi","Mumbai","Goa","Pune"],"correctAnswer":0}]
+        `;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(text);
+
+    } catch (error) {
+        console.error("Battle AI Error:", error);
+        return [];
+    }
+};
+
+module.exports = { generateQuestions, generateBattleQuestions };

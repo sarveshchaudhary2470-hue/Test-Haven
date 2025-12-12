@@ -33,6 +33,10 @@ const schoolSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    isBattleEnabled: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

@@ -19,13 +19,16 @@ import {
     Trophy,
     Award,
     XCircle,
-    Mail
+    Mail,
+    Swords
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import TestCreationModal from '../../components/TestCreationModal';
 import SuperContestSection from '../../components/SuperContestSection';
+import SuperContestSection from '../../components/SuperContestSection';
 import SuperContestResultsSection from '../../components/SuperContestResultsSection';
+import AdminBattleControl from './AdminBattleControl';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
@@ -343,6 +346,7 @@ const AdminDashboard = () => {
                         <SidebarItem id="managers" icon={Briefcase} label="Managers" />
                         <SidebarItem id="tests" icon={FileText} label="Tests" />
                         <SidebarItem id="super-contests" icon={Trophy} label="Super Contests" />
+                        <SidebarItem id="battle-control" icon={Swords} label="Battle Arena" />
                         <SidebarItem id="contest-results" icon={Trophy} label="Contest Results" />
                         <SidebarItem id="results" icon={Award} label="All Results" />
                         <SidebarItem id="messages" icon={Mail} label="Messages" />
@@ -659,6 +663,15 @@ const AdminDashboard = () => {
                                 exit={{ opacity: 0, y: -20 }}
                             >
                                 <SuperContestSection />
+                            </motion.div>
+                        ) : activeTab === 'battle-control' ? (
+                            <motion.div
+                                key="battle-control"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                            >
+                                <AdminBattleControl />
                             </motion.div>
                         ) : activeTab === 'contest-results' ? (
                             <motion.div
