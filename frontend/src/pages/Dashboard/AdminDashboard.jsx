@@ -26,7 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import TestCreationModal from '../../components/TestCreationModal';
 import SuperContestSection from '../../components/SuperContestSection';
-import SuperContestSection from '../../components/SuperContestSection';
+
 import SuperContestResultsSection from '../../components/SuperContestResultsSection';
 import AdminBattleControl from './AdminBattleControl';
 
