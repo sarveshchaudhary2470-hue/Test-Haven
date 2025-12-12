@@ -15,6 +15,7 @@ const SuperContestSection = () => {
     const [contests, setContests] = useState([]);
     const [schools, setSchools] = useState([]);
     const [showForm, setShowForm] = useState(false);
+    const [showAIModal, setShowAIModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [numQuestions, setNumQuestions] = useState(5);
     const [formData, setFormData] = useState({
