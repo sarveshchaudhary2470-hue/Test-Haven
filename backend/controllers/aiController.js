@@ -1,7 +1,7 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
 /**
- * Generate Questions using Gemini AI
+ * Generate Questions using Groq (Llama-3)
  * @route POST /api/ai/generate-questions
  * @access Private
  */
@@ -9,17 +9,15 @@ const generateQuestions = async (req, res) => {
     try {
         const { topic, subject, className, difficulty, count } = req.body;
 
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GROQ_API_KEY) {
             return res.status(500).json({
                 success: false,
-                message: "Gemini API Key is not configured in the server."
+                message: "Groq API Key is not configured in the server."
             });
         }
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-        // Strict Prompt Engineering ensures valid JSON output
         const prompt = `
             Act as a strict teacher data generator.
             Generate ${count} multiple choice questions for specific details below:
@@ -45,18 +43,38 @@ const generateQuestions = async (req, res) => {
             ]
         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.5
+        });
 
-        // Clean the response (remove potential markdown code blocks)
-        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const text = completion.choices[0]?.message?.content || "";
+        console.log("Groq Raw Answer:", text);
 
         let questions;
         try {
-            questions = JSON.parse(cleanedText);
+            // Llama 3 with JSON mode usually returns an object like { "questions": [...] } or just the array.
+            // We need to be careful. The prompt asked for an array, but json_object mode enforces VALID JSON.
+            // Sometimes it wraps it. Let's try to parse directly.
+            const parsed = JSON.parse(text);
+
+            if (Array.isArray(parsed)) {
+                questions = parsed;
+            } else if (parsed.questions && Array.isArray(parsed.questions)) {
+                questions = parsed.questions;
+            } else {
+                // Determine if it's a wrapped object with a random key
+                const keys = Object.keys(parsed);
+                if (keys.length === 1 && Array.isArray(parsed[keys[0]])) {
+                    questions = parsed[keys[0]];
+                } else {
+                    throw new Error("Could not find array in JSON response");
+                }
+            }
+
         } catch (parseError) {
-            console.error("AI JSON Parse Error:", parseError, "Raw Text:", text);
+            console.error("Groq JSON Parse Error:", parseError);
             return res.status(500).json({
                 success: false,
                 message: "AI generated invalid data format. Please try again."
@@ -69,10 +87,10 @@ const generateQuestions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("AI Generation Error:", error);
+        console.error("Groq Generation Error:", error);
         res.status(500).json({
             success: false,
-            message: "Failed to generate questions. " + (error.message || "")
+            message: "Failed to generate questions. " + error.message
         });
     }
 };
@@ -84,10 +102,9 @@ const generateQuestions = async (req, res) => {
  */
 const generateBattleQuestions = async (className) => {
     try {
-        if (!process.env.GEMINI_API_KEY) throw new Error("Gemini API Key missing");
+        if (!process.env.GROQ_API_KEY) throw new Error("Groq API Key missing");
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
         const prompt = `
             Act as a Quiz Master for a 1v1 Battle Arena.
@@ -103,9 +120,21 @@ const generateBattleQuestions = async (className) => {
             Example: [{"question":"Capital of India?","options":["Delhi","Mumbai","Goa","Pune"],"correctAnswer":0}]
         `;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(text);
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7
+        });
+
+        const text = completion.choices[0]?.message?.content || "";
+        const parsed = JSON.parse(text);
+
+        // Handle array or wrapped array
+        if (Array.isArray(parsed)) return parsed;
+        const keys = Object.keys(parsed);
+        if (keys.length === 1 && Array.isArray(parsed[keys[0]])) return parsed[keys[0]];
+
+        return [];
 
     } catch (error) {
         console.error("Battle AI Error:", error);
