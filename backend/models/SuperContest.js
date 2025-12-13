@@ -12,11 +12,11 @@ const SuperContestSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    school: {
+    schools: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'School',
         required: true
-    },
+    }],
     classes: {
         type: [Number],
         required: [true, 'Please select at least one class'],

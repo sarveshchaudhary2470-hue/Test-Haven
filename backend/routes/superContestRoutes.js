@@ -11,10 +11,21 @@ router.post('/', protect, authorize('admin', 'principal', 'manager'), async (req
     try {
         const { title, description, classes, subject, duration, totalMarks, questions, startTime, endTime } = req.body;
 
-        // Determine school: Use provided school for admin/manager, otherwise user's school
-        let schoolId = req.user.school;
-        if ((req.user.role === 'admin' || req.user.role === 'manager') && req.body.school) {
-            schoolId = req.body.school;
+        // Determine schools: Use provided schools for admin/manager, otherwise user's school
+        let targetSchools = [];
+        if (req.user.school) {
+            targetSchools.push(req.user.school);
+        }
+
+        if ((req.user.role === 'admin' || req.user.role === 'manager') && req.body.schools && req.body.schools.length > 0) {
+            targetSchools = req.body.schools;
+        }
+
+        if (targetSchools.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one school must be selected'
+            });
         }
 
         const contestData = {
@@ -27,7 +38,7 @@ router.post('/', protect, authorize('admin', 'principal', 'manager'), async (req
             questions,
             startTime,
             endTime,
-            school: schoolId,
+            schools: targetSchools,
             createdBy: req.user._id
         };
 
@@ -54,17 +65,17 @@ router.get('/', protect, async (req, res) => {
         let filter = { isActive: true };
 
         if (req.user.role === 'student') {
-            // Students see contests for their class and school
-            filter.school = req.user.school;
+            // Students see contests for their class and their school is in the list
+            filter.schools = { $in: [req.user.school] };
             filter.classes = req.user.class;
         } else if (req.user.role === 'principal' || req.user.role === 'teacher') {
             // Principals and teachers see contests for their school
-            filter.school = req.user.school;
+            filter.schools = { $in: [req.user.school] };
         }
         // Admins and managers see all contests
 
         const contests = await SuperContest.find(filter)
-            .populate('school', 'name code')
+            .populate('schools', 'name code')
             .populate('createdBy', 'name')
             .sort({ startTime: -1 });
 
@@ -97,7 +108,7 @@ router.get('/', protect, async (req, res) => {
 router.get('/:id', protect, async (req, res) => {
     try {
         const contest = await SuperContest.findById(req.params.id)
-            .populate('school', 'name code')
+            .populate('schools', 'name code')
             .populate('createdBy', 'name');
 
         if (!contest) {
@@ -113,9 +124,12 @@ router.get('/:id', protect, async (req, res) => {
         // Check access permissions
         if (req.user.role === 'student') {
             const userSchoolId = req.user.school?._id?.toString() || req.user.school?.toString();
-            const contestSchoolId = contest.school?._id?.toString() || contest.school?.toString();
+            // Check if user's school is in the allowed schools list
+            const isAllowedSchool = contest.schools.some(s =>
+                (s._id?.toString() || s.toString()) === userSchoolId
+            );
 
-            if (contestSchoolId !== userSchoolId || !contest.classes.includes(req.user.class)) {
+            if (!isAllowedSchool || !contest.classes.includes(req.user.class)) {
                 return res.status(403).json({
                     success: false,
                     message: 'Not authorized to access this contest'
@@ -130,9 +144,11 @@ router.get('/:id', protect, async (req, res) => {
 
         } else if (req.user.role === 'principal' || req.user.role === 'teacher') {
             const userSchoolId = req.user.school?._id?.toString() || req.user.school?.toString();
-            const contestSchoolId = contest.school?._id?.toString() || contest.school?.toString();
+            const isAllowedSchool = contest.schools.some(s =>
+                (s._id?.toString() || s.toString()) === userSchoolId
+            );
 
-            if (contestSchoolId !== userSchoolId) {
+            if (!isAllowedSchool) {
                 return res.status(403).json({
                     success: false,
                     message: 'Not authorized to access this contest'
@@ -177,13 +193,15 @@ router.delete('/:id', protect, authorize('admin', 'principal', 'manager'), async
         }
         // 2. Principal/Manager: School-based Access
         else if (userRole === 'principal' || userRole === 'manager') {
-            const contestSchoolId = contest.school?._id ? contest.school._id.toString() : contest.school?.toString();
             const userSchoolId = req.user.school?._id ? req.user.school._id.toString() : req.user.school?.toString();
 
             const isCreator = contest.createdBy.toString() === userId;
-            const isSameSchool = contestSchoolId && userSchoolId && (contestSchoolId === userSchoolId);
+            // Check if user's school is one of the contest's schools
+            const isRelatedSchool = contest.schools.some(s =>
+                (s && (s._id?.toString() === userSchoolId || s.toString() === userSchoolId))
+            );
 
-            if (!isCreator && !isSameSchool) {
+            if (!isCreator && !isRelatedSchool) {
                 return res.status(403).json({
                     success: false,
                     message: 'Not authorized to delete this contest'

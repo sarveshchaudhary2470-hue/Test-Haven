@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Sparkles, X, Loader, BookOpen, GraduationCap, BarChart } from 'lucide-react';
+import { Sparkles, X, Loader, BookOpen, GraduationCap, BarChart, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
@@ -10,11 +10,18 @@ const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
         subject: defaultSubject || '',
         className: '10',
         difficulty: 'Medium',
-        count: 5
+        count: 5,
+        language: 'English'
     });
 
     const handleGenerate = async (e) => {
         e.preventDefault();
+
+        if (formData.count < 1) {
+            alert("⚠️ Please generate at least 1 question!");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -106,6 +113,26 @@ const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
                         </div>
                     </div>
 
+                    {/* Language Selector */}
+                    <div>
+                        <label className="block text-sm text-gray-400 mb-1">Language Mode</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['English', 'Hindi', 'Bilingual'].map((lang) => (
+                                <button
+                                    key={lang}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, language: lang })}
+                                    className={`py-2 px-3 rounded-xl text-sm font-semibold transition-all border ${formData.language === lang
+                                        ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/25'
+                                        : 'bg-black/20 border-white/10 text-gray-400 hover:bg-white/5'
+                                        }`}
+                                >
+                                    {lang === 'Bilingual' ? 'Hinglish' : lang}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm text-gray-400 mb-1">Difficulty</label>
@@ -123,16 +150,26 @@ const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-400 mb-1">Count</label>
-                            <select
-                                value={formData.count}
-                                onChange={e => setFormData({ ...formData, count: parseInt(e.target.value) })}
+                            <label className="block text-sm text-gray-400 mb-1">Count (Max 100)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={formData.count === 0 ? '' : formData.count}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    if (val === '') {
+                                        setFormData({ ...formData, count: 0 });
+                                    } else {
+                                        const num = parseInt(val);
+                                        if (num <= 100) { // Only allow if <= 100, checking > 0 on submit
+                                            setFormData({ ...formData, count: num });
+                                        }
+                                    }
+                                }}
                                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500 text-white"
-                            >
-                                <option value="5" className="bg-slate-800">5 Questions</option>
-                                <option value="10" className="bg-slate-800">10 Questions</option>
-                                <option value="15" className="bg-slate-800">15 Questions</option>
-                            </select>
+                                placeholder="Enter qty"
+                            />
                         </div>
                     </div>
 
@@ -143,6 +180,7 @@ const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
                     >
                         {loading ? (
                             <>
+                                <Loader className="animate-spin h-5 w-5" />
                                 <Loader className="animate-spin h-5 w-5" />
                                 Generating Magic...
                             </>
@@ -155,7 +193,7 @@ const AIGenerationModal = ({ onClose, onGenerate, defaultSubject = '' }) => {
                     </button>
 
                     <p className="text-center text-xs text-gray-500">
-                        Powered by Google Gemini AI
+                        Powered by TestHaven
                     </p>
                 </form>
             </motion.div>

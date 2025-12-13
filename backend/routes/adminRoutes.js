@@ -213,4 +213,6 @@ router.delete('/users/:id', protect, authorize('admin', 'principal'), async (req
     }
 });
 
+
+
 module.exports = router;

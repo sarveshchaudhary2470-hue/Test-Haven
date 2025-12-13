@@ -18,7 +18,7 @@ import StudentDashboard from './pages/Dashboard/StudentDashboard';
 import TestPaper from './pages/TestPaper';
 import TestTaking from './pages/TestTaking';
 import SuperContestTaking from './pages/SuperContestTaking';
-import BattleLobby from './pages/BattleLobby';
+
 // import BattleArena from './pages/BattleArena'; // DELETED
 import { Toaster } from 'react-hot-toast';
 
@@ -127,16 +127,7 @@ function AppContent() {
             }
           />
 
-          {/* Battle Arena Routes */}
-          <Route
-            path="/battle"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <BattleLobby />
-              </ProtectedRoute>
-            }
-          />
-          {/* BattleArena Removed as checks are now inside BattleLobby */}
+
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

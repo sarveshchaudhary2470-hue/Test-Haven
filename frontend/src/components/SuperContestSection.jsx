@@ -5,7 +5,7 @@ import {
     Trophy, Plus, Trash2, Users, Clock, Calendar, Award,
     Target, Zap, Star, Crown, Medal, X, Check, Shuffle, Hash, School, Upload, Download, Sparkles
 } from 'lucide-react';
-import { downloadTemplate, parseQuestionsFromExcel } from '../utils/excelUtils';
+import { parseQuestionsFromExcel } from '../utils/excelUtils';
 import AIGenerationModal from './AIGenerationModal';
 
 import { useAuth } from '../context/AuthContext';
@@ -18,11 +18,11 @@ const SuperContestSection = () => {
     const [showAIModal, setShowAIModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [numQuestions, setNumQuestions] = useState(5);
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         title: '',
         description: '',
         subject: '',
-        school: '',
+        schools: [],
         classes: [],
         duration: 30,
         totalMarks: 100,
@@ -31,7 +31,15 @@ const SuperContestSection = () => {
         endTime: '',
         randomizeQuestions: false,
         randomizeOptions: false
-    });
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
+
+    const handleCloseForm = () => {
+        setFormData(initialFormData);
+        setNumQuestions(5);
+        setShowForm(false);
+    };
 
     useEffect(() => {
         fetchData();
@@ -177,6 +185,17 @@ const SuperContestSection = () => {
         alert('✨ Questions randomized!');
     };
 
+    const [globalMarks, setGlobalMarks] = useState(1);
+
+    const handleApplyMarksToAll = () => {
+        if (formData.questions.length === 0) return;
+        setFormData(prev => ({
+            ...prev,
+            questions: prev.questions.map(q => ({ ...q, marks: globalMarks }))
+        }));
+        alert(`✅ Updated all ${formData.questions.length} questions to ${globalMarks} marks!`);
+    };
+
     const handleRandomizeOptions = (qIndex) => {
         const newQuestions = [...formData.questions];
         const question = newQuestions[qIndex];
@@ -195,8 +214,8 @@ const SuperContestSection = () => {
         e.preventDefault();
 
         // Only validate school selection for admin/manager
-        if (['admin', 'manager'].includes(user?.role) && !formData.school) {
-            alert('Please select a school');
+        if (['admin', 'manager'].includes(user?.role) && formData.schools.length === 0) {
+            alert('Please select at least one school');
             return;
         }
 
@@ -234,22 +253,7 @@ const SuperContestSection = () => {
 
             await axios.post('/api/super-contests', payload, config);
             alert('🏆 Super Contest created successfully!');
-            setShowForm(false);
-            setFormData({
-                title: '',
-                description: '',
-                subject: '',
-                school: '',
-                classes: [],
-                duration: 30,
-                totalMarks: 100,
-                questions: [],
-                startTime: '',
-                endTime: '',
-                randomizeQuestions: false,
-                randomizeOptions: false
-            });
-            setNumQuestions(5);
+            handleCloseForm();
             fetchData();
         } catch (error) {
             console.error('Error creating contest:', error);
@@ -359,7 +363,11 @@ const SuperContestSection = () => {
                             <div className="space-y-2 mb-4">
                                 <div className="flex items-center gap-2 text-sm text-gray-300">
                                     <School className="h-4 w-4 text-orange-400" />
-                                    <span>{contest.school?.name || 'Unknown School'}</span>
+                                    <span>
+                                        {contest.schools && contest.schools.length > 0
+                                            ? (contest.schools.length === 1 ? contest.schools[0].name : `${contest.schools.length} Schools`)
+                                            : (contest.school?.name || 'Unknown School')}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-300">
                                     <Users className="h-4 w-4 text-blue-400" />
@@ -406,7 +414,7 @@ const SuperContestSection = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                        onClick={() => setShowForm(false)}
+                        onClick={handleCloseForm}
                     >
                         <motion.div
                             initial={{ scale: 0.9, y: 20 }}
@@ -424,7 +432,7 @@ const SuperContestSection = () => {
                                     <h3 className="text-2xl font-bold text-white">Create Super Contest</h3>
                                 </div>
                                 <button
-                                    onClick={() => setShowForm(false)}
+                                    onClick={handleCloseForm}
                                     className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                                 >
                                     <X className="h-6 w-6 text-gray-400" />
@@ -460,21 +468,30 @@ const SuperContestSection = () => {
 
                                 {/* School Selection */}
                                 {user && ['admin', 'manager'].includes(user.role) && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Select School *</label>
-                                        <select
-                                            required
-                                            value={formData.school}
-                                            onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
-                                        >
-                                            <option value="" className="text-black">Select a School</option>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Select Schools * (Select one or more)</label>
+                                        <div className="max-h-40 overflow-y-auto bg-white/5 border border-white/10 rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 gap-2 custom-scrollbar">
                                             {schools.map(school => (
-                                                <option key={school._id} value={school._id} className="text-black">
-                                                    {school.name} ({school.code})
-                                                </option>
+                                                <label key={school._id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.schools.includes(school._id)}
+                                                        onChange={(e) => {
+                                                            const id = school._id;
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                schools: e.target.checked
+                                                                    ? [...prev.schools, id]
+                                                                    : prev.schools.filter(s => s !== id)
+                                                            }));
+                                                        }}
+                                                        className="rounded bg-black/20 border-white/10 text-yellow-500 focus:ring-yellow-500/50"
+                                                    />
+                                                    <span className="text-gray-300 text-sm truncate">{school.name}</span>
+                                                </label>
                                             ))}
-                                        </select>
+                                        </div>
+                                        {formData.schools.length === 0 && <p className="text-red-400 text-xs mt-1">Please select at least one school.</p>}
                                     </div>
                                 )}
 
@@ -530,8 +547,18 @@ const SuperContestSection = () => {
                                         <input
                                             type="datetime-local"
                                             required
+                                            min={new Date().toISOString().slice(0, 16)}
                                             value={formData.startTime}
-                                            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const selected = new Date(val);
+                                                const now = new Date();
+                                                if (selected < now) {
+                                                    alert("❌ Cannot select past time!");
+                                                    return;
+                                                }
+                                                setFormData({ ...formData, startTime: val })
+                                            }}
                                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
                                         />
                                     </div>
@@ -540,8 +567,18 @@ const SuperContestSection = () => {
                                         <input
                                             type="datetime-local"
                                             required
+                                            min={formData.startTime || new Date().toISOString().slice(0, 16)}
                                             value={formData.endTime}
-                                            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const selected = new Date(val);
+                                                const now = new Date();
+                                                if (selected < now) {
+                                                    alert("❌ Cannot select past time!");
+                                                    return;
+                                                }
+                                                setFormData({ ...formData, endTime: val })
+                                            }}
                                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
                                         />
                                     </div>
@@ -599,7 +636,7 @@ const SuperContestSection = () => {
                                             <input
                                                 type="number"
                                                 min="1"
-                                                max="50"
+                                                max="100"
                                                 value={numQuestions}
                                                 onChange={(e) => setNumQuestions(parseInt(e.target.value))}
                                                 className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-blue-500 focus:outline-none"
@@ -614,6 +651,30 @@ const SuperContestSection = () => {
                                             Generate {numQuestions} Questions
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* Global Marks Controller */}
+                                <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4 flex-1">
+                                        <label className="text-sm font-medium text-purple-300 whitespace-nowrap">
+                                            <Target className="h-4 w-4 inline mr-2" />
+                                            Set Marks for All
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={globalMarks}
+                                            onChange={(e) => setGlobalMarks(parseInt(e.target.value) || 1)}
+                                            className="w-24 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyMarksToAll}
+                                        className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-300 font-semibold transition-all text-sm"
+                                    >
+                                        Apply to All Questions
+                                    </button>
                                 </div>
 
                                 {/* Questions */}
@@ -639,14 +700,7 @@ const SuperContestSection = () => {
                                                 <Sparkles className="h-4 w-4" />
                                                 Generate AI
                                             </button>
-                                            <button
-                                                type="button"
-                                                onClick={downloadTemplate}
-                                                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-gray-300 font-semibold transition-all flex items-center gap-2"
-                                            >
-                                                <Download className="h-4 w-4" />
-                                                Template
-                                            </button>
+
 
                                             <label className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded-lg text-green-300 font-semibold transition-all flex items-center gap-2 cursor-pointer">
                                                 <Upload className="h-4 w-4" />
@@ -748,7 +802,7 @@ const SuperContestSection = () => {
                                 <div className="flex gap-4 pt-4">
                                     <button
                                         type="button"
-                                        onClick={() => setShowForm(false)}
+                                        onClick={handleCloseForm}
                                         className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 font-semibold transition-all"
                                     >
                                         Cancel

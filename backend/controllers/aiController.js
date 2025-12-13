@@ -7,7 +7,7 @@ const Groq = require("groq-sdk");
  */
 const generateQuestions = async (req, res) => {
     try {
-        const { topic, subject, className, difficulty, count } = req.body;
+        const { topic, subject, className, difficulty, count, language } = req.body;
 
         if (!process.env.GROQ_API_KEY) {
             return res.status(500).json({
@@ -25,11 +25,20 @@ const generateQuestions = async (req, res) => {
             - Topic: ${topic}
             - Class: ${className}
             - Difficulty: ${difficulty}
-            - Language: English
+            - Language Mode: ${language || 'English'} (Strictly follow this)
+
+            Language Rules:
+            1. If "Hindi": All text (questions, options) must be in pure Hindi script (Devanagari).
+            2. If "Bilingual": Format as "English Text (Hindi Translation)". Example: "What is Force? (बल क्या है?)" for both question and options.
+            3. If "English": Pure English.
 
             Output Rules:
             1. Return strictly a JSON array of objects. No markdown, no "json" text, no backticks.
-            2. Each object must have these exact keys: "question", "options" (array of 4 strings), "correctAnswer" (integer 0-3).
+            2. Structure: [{ "question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": 0_to_3 }]
+            3. Each question MUST have exactly 4 options.
+            4. Do not include any explanation or extra text.
+            2. GENERATE EXACTLY ${count} QUESTIONS. Do not generate less or more.
+            3. Each object must have these exact keys: "question", "options" (array of 4 strings), "correctAnswer" (integer 0-3).
             3. "correctAnswer" must be the index of the correct option (0 for A, 1 for B, etc.).
             4. Ensure options are distinct.
             
@@ -73,6 +82,12 @@ const generateQuestions = async (req, res) => {
                 }
             }
 
+            // ENFORCE LIMIT: Slice the array to the requested count to prevent AI hallucinations/over-generation
+            if (questions && questions.length > count) {
+                questions = questions.slice(0, count);
+            }
+
+
         } catch (parseError) {
             console.error("Groq JSON Parse Error:", parseError);
             return res.status(500).json({
@@ -100,46 +115,5 @@ const generateQuestions = async (req, res) => {
  * @input className, subject (optional)
  * @returns 20 Questions JSON
  */
-const generateBattleQuestions = async (className) => {
-    try {
-        if (!process.env.GROQ_API_KEY) throw new Error("Groq API Key missing");
 
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-        const prompt = `
-            Act as a Quiz Master for a 1v1 Battle Arena.
-            Generate 20 Short & Tricky Multiple Choice Questions for Class ${className} students.
-            Mix subjects: Science (6), Math (6), General Knowledge (4), English (4).
-
-            Rules:
-            1. Questions must be ONE LINE only (for fast reading).
-            2. Options must be short (1-3 words).
-            3. Return strictly a JSON array.
-            4. JSON Keys: "question", "options" (4 strings), "correctAnswer" (0-3).
-            
-            Example: [{"question":"Capital of India?","options":["Delhi","Mumbai","Goa","Pune"],"correctAnswer":0}]
-        `;
-
-        const completion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: prompt }],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.7
-        });
-
-        const text = completion.choices[0]?.message?.content || "";
-        const parsed = JSON.parse(text);
-
-        // Handle array or wrapped array
-        if (Array.isArray(parsed)) return parsed;
-        const keys = Object.keys(parsed);
-        if (keys.length === 1 && Array.isArray(parsed[keys[0]])) return parsed[keys[0]];
-
-        return [];
-
-    } catch (error) {
-        console.error("Battle AI Error:", error);
-        return [];
-    }
-};
-
-module.exports = { generateQuestions, generateBattleQuestions };
+module.exports = { generateQuestions };

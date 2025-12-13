@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { X, Plus, Trash2, CheckCircle, Languages, Upload, Download, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { downloadTemplate, parseQuestionsFromExcel } from '../utils/excelUtils';
+import { parseQuestionsFromExcel } from '../utils/excelUtils';
 import AIGenerationModal from './AIGenerationModal';
 
 const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
     const [loading, setLoading] = useState(false);
     const [testLanguage, setTestLanguage] = useState('english'); // 'english' or 'hindi'
     const [showAIModal, setShowAIModal] = useState(false);
+    const [globalMarks, setGlobalMarks] = useState(1);
 
     // Initial Form State
     const [testForm, setTestForm] = useState({
@@ -25,16 +26,14 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
         questions: [{
             question: '',
             options: ['', '', '', ''],
-            correctAnswer: 0
+            correctAnswer: 0,
+            marks: 1
         }]
     });
 
     const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
-    const handleSchoolSelection = (e) => {
-        const selectedId = e.target.value;
-        setTestForm({ ...testForm, schools: selectedId ? [selectedId] : [] });
-    };
+
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -72,7 +71,7 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
     const addQuestion = () => {
         setTestForm(prev => ({
             ...prev,
-            questions: [...prev.questions, { question: '', options: ['', '', '', ''], correctAnswer: 0 }]
+            questions: [...prev.questions, { question: '', options: ['', '', '', ''], correctAnswer: 0, marks: 1 }]
         }));
     };
 
@@ -97,8 +96,22 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
         setTestForm(prev => ({ ...prev, questions: newQuestions }));
     };
 
+    const handleApplyMarksToAll = () => {
+        if (testForm.questions.length === 0) return;
+        setTestForm(prev => ({
+            ...prev,
+            questions: prev.questions.map(q => ({ ...q, marks: globalMarks }))
+        }));
+        alert(`✅ Updated all ${testForm.questions.length} questions to ${globalMarks} marks!`);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isAdminOrManager && testForm.schools.length === 0) {
+            alert('Please select at least one school');
+            return;
+        }
+
         if (testForm.questions.some(q => !q.question || q.options.some(opt => !opt))) {
             alert('Please fill in all questions and options');
             return;
@@ -126,6 +139,33 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
         }
     };
 
+    // Helper to get current date-time string for min attribute
+    const getCurrentDateTime = () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 16);
+    };
+
+    const handleDateChange = (field, value) => {
+        const selectedDate = new Date(value);
+        const now = new Date();
+
+        if (selectedDate < now) {
+            alert("❌ You cannot select a past date/time!");
+            return;
+        }
+
+        if (field === 'scheduledCloseAt' && testForm.scheduledPublishAt) {
+            const publishDate = new Date(testForm.scheduledPublishAt);
+            if (selectedDate <= publishDate) {
+                alert("❌ Close time must be AFTER the publish time!");
+                return;
+            }
+        }
+
+        setTestForm({ ...testForm, [field]: value });
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <motion.div
@@ -149,19 +189,45 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                             {/* School Selection for Admin/Manager */}
                             {isAdminOrManager && (
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm text-gray-400 mb-1">Target School <span className="text-primary-400 text-xs ml-2">(Admin Only)</span></label>
-                                    <select
-                                        value={testForm.schools[0] || ""}
-                                        onChange={handleSchoolSelection}
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500 text-white"
-                                    >
-                                        <option value="">Select a School (or Assign to All)</option>
+                                    <label className="block text-sm text-gray-400 mb-2">Target Schools <span className="text-primary-400 text-xs ml-2">(Admin Only - Select One or More)</span></label>
+                                    <div className="max-h-40 overflow-y-auto bg-black/20 border border-white/10 rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 gap-2 custom-scrollbar">
+                                        {/* Select All Option */}
+                                        <label className="col-span-1 sm:col-span-2 flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors bg-white/5 border border-white/5 mb-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={schools?.length > 0 && testForm.schools.length === schools.length}
+                                                onChange={(e) => {
+                                                    setTestForm(prev => ({
+                                                        ...prev,
+                                                        schools: e.target.checked ? schools.map(s => s._id) : []
+                                                    }));
+                                                }}
+                                                className="rounded bg-black/20 border-white/10 text-primary-500 focus:ring-primary-500/50"
+                                            />
+                                            <span className="text-white font-semibold text-sm">Select All Schools</span>
+                                        </label>
+
                                         {schools?.map(school => (
-                                            <option key={school._id} value={school._id}>
-                                                {school.name} ({school.code})
-                                            </option>
+                                            <label key={school._id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={testForm.schools.includes(school._id)}
+                                                    onChange={(e) => {
+                                                        const id = school._id;
+                                                        setTestForm(prev => ({
+                                                            ...prev,
+                                                            schools: e.target.checked
+                                                                ? [...prev.schools, id]
+                                                                : prev.schools.filter(s => s !== id)
+                                                        }));
+                                                    }}
+                                                    className="rounded bg-black/20 border-white/10 text-primary-500 focus:ring-primary-500/50"
+                                                />
+                                                <span className="text-gray-300 text-sm truncate">{school.name} ({school.code})</span>
+                                            </label>
                                         ))}
-                                    </select>
+                                    </div>
+                                    {testForm.schools.length === 0 && <p className="text-red-400 text-xs mt-1">Please select at least one school.</p>}
                                 </div>
                             )}
 
@@ -185,8 +251,8 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Class</label>
                                 <select value={testForm.class} onChange={e => setTestForm({ ...testForm, class: e.target.value })} className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white">
-                                    <option value="">Select Class</option>
-                                    {[...Array(12)].map((_, i) => <option key={i} value={i + 1}>Class {i + 1}</option>)}
+                                    <option value="" className="bg-[#1e293b] text-white">Select Class</option>
+                                    {[...Array(12)].map((_, i) => <option key={i} value={i + 1} className="bg-[#1e293b] text-white">Class {i + 1}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -201,11 +267,23 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                             {/* Schedule & Randomization */}
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Schedule Publish</label>
-                                <input type="datetime-local" value={testForm.scheduledPublishAt} onChange={e => setTestForm({ ...testForm, scheduledPublishAt: e.target.value })} className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white" />
+                                <input
+                                    type="datetime-local"
+                                    min={getCurrentDateTime()}
+                                    value={testForm.scheduledPublishAt}
+                                    onChange={e => handleDateChange('scheduledPublishAt', e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Schedule Close</label>
-                                <input type="datetime-local" value={testForm.scheduledCloseAt} onChange={e => setTestForm({ ...testForm, scheduledCloseAt: e.target.value })} className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white" />
+                                <input
+                                    type="datetime-local"
+                                    min={testForm.scheduledPublishAt || getCurrentDateTime()}
+                                    value={testForm.scheduledCloseAt}
+                                    onChange={e => handleDateChange('scheduledCloseAt', e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white"
+                                />
                             </div>
 
                             <div className="md:col-span-2 flex gap-6">
@@ -228,9 +306,7 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                                     <button type="button" onClick={() => setShowAIModal(true)} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors border border-purple-500/40 hover:border-purple-500/60">
                                         <Sparkles size={16} /> Generate with AI
                                     </button>
-                                    <button type="button" onClick={downloadTemplate} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm px-3 py-2 border border-white/10 rounded-lg">
-                                        <Download size={16} /> Template
-                                    </button>
+
                                     <label className="cursor-pointer bg-green-500/10 text-green-400 hover:bg-green-500/20 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors border border-green-500/20 hover:border-green-500/40">
                                         <Upload size={16} /> Upload Excel
                                         <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
@@ -239,6 +315,29 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                                         <Plus size={16} /> Add Question
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Global Marks Controller */}
+                            <div className="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4 flex items-center justify-between gap-4 mb-4">
+                                <div className="flex items-center gap-4 flex-1">
+                                    <label className="text-sm font-medium text-primary-300 whitespace-nowrap">
+                                        Set Marks for All
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={globalMarks}
+                                        onChange={(e) => setGlobalMarks(parseInt(e.target.value) || 1)}
+                                        className="w-24 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleApplyMarksToAll}
+                                    className="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 border border-primary-500/40 rounded-lg text-primary-300 font-semibold transition-all text-sm"
+                                >
+                                    Apply to All
+                                </button>
                             </div>
 
                             {/* Questions List */}
@@ -256,9 +355,13 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                                             {q.options.map((opt, optIndex) => (
                                                 <div key={optIndex} className="flex items-center gap-3">
                                                     <button type="button" onClick={() => updateQuestion(qIndex, 'correctAnswer', optIndex)} className={`w-6 h-6 rounded-full border flex items-center justify-center ${q.correctAnswer === optIndex ? 'bg-green-500 border-green-500 text-white' : 'border-gray-500'}`}><CheckCircle size={14} /></button>
-                                                    <input type="text" required value={opt} onChange={e => updateOption(qIndex, optIndex, e.target.value)} className={`w-full bg-[#1e293b] border rounded-xl px-4 py-2 ${q.correctAnswer === optIndex ? 'border-green-500/50' : 'border-white/10'}`} placeholder={`Option ${optIndex + 1}`} />
+                                                    <input type="text" required value={opt} onChange={e => updateOption(qIndex, optIndex, e.target.value)} className={`flex-1 bg-[#1e293b] border rounded-xl px-4 py-2 ${q.correctAnswer === optIndex ? 'border-green-500/50' : 'border-white/10'}`} placeholder={`Option ${optIndex + 1}`} />
                                                 </div>
                                             ))}
+                                            <div className="col-span-1 md:col-span-2 mt-2">
+                                                <label className="text-xs text-gray-400 ml-1">Marks</label>
+                                                <input type="number" min="1" value={q.marks || 1} onChange={e => updateQuestion(qIndex, 'marks', parseInt(e.target.value))} className="w-24 bg-[#1e293b] border border-white/10 rounded-xl px-4 py-2 ml-2 focus:outline-none focus:border-primary-500" />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -271,14 +374,14 @@ const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
                     <button type="button" onClick={onClose} className="px-6 py-2 rounded-xl text-gray-400 hover:bg-white/5">Cancel</button>
                     <button type="submit" form="test-form" disabled={loading} className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-xl font-medium">{loading ? 'Creating...' : 'Create Test'}</button>
                 </div>
-            </motion.div>
+            </motion.div >
 
             <AnimatePresence>
                 {showAIModal && (
                     <AIGenerationModal onClose={() => setShowAIModal(false)} onGenerate={handleAIGeneratedQuestions} defaultSubject={testForm.subject} />
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 

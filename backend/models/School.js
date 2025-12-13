@@ -34,10 +34,7 @@ const schoolSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    isBattleEnabled: {
-        type: Boolean,
-        default: false
-    }
+
 }, {
     timestamps: true
 });
