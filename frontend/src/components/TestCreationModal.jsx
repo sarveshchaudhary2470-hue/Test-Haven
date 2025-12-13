@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { downloadTemplate, parseQuestionsFromExcel } from '../utils/excelUtils';
 import AIGenerationModal from './AIGenerationModal';
 
-const TestCreationModal = ({ onClose, onSuccess }) => {
+const TestCreationModal = ({ onClose, onSuccess, user, schools }) => {
     const [loading, setLoading] = useState(false);
     const [testLanguage, setTestLanguage] = useState('english'); // 'english' or 'hindi'
     const [showAIModal, setShowAIModal] = useState(false);
@@ -17,7 +17,7 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
         class: '',
         duration: 30,
         totalMarks: 100,
-        targetSchools: [],
+        schools: [],
         scheduledPublishAt: '',
         scheduledCloseAt: '',
         randomizeQuestions: false,
@@ -28,6 +28,13 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
             correctAnswer: 0
         }]
     });
+
+    const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
+    const handleSchoolSelection = (e) => {
+        const selectedId = e.target.value;
+        setTestForm({ ...testForm, schools: selectedId ? [selectedId] : [] });
+    };
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -138,6 +145,26 @@ const TestCreationModal = ({ onClose, onSuccess }) => {
                     <form id="test-form" onSubmit={handleSubmit} className="space-y-6">
                         {/* Basic Details Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {/* School Selection for Admin/Manager */}
+                            {isAdminOrManager && (
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm text-gray-400 mb-1">Target School <span className="text-primary-400 text-xs ml-2">(Admin Only)</span></label>
+                                    <select
+                                        value={testForm.schools[0] || ""}
+                                        onChange={handleSchoolSelection}
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary-500 text-white"
+                                    >
+                                        <option value="">Select a School (or Assign to All)</option>
+                                        {schools?.map(school => (
+                                            <option key={school._id} value={school._id}>
+                                                {school.name} ({school.code})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             <div className="md:col-span-2">
                                 <label className="block text-sm text-gray-400 mb-1">Test Title</label>
                                 <input

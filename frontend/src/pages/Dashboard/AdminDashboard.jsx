@@ -1055,6 +1055,8 @@ const AdminDashboard = () => {
                             <TestCreationModal
                                 onClose={() => setShowTestModal(false)}
                                 onSuccess={fetchData}
+                                user={user}
+                                schools={schools}
                             />
                         )}
                     </AnimatePresence>
