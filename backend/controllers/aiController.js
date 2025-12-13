@@ -17,7 +17,7 @@ const generateQuestions = async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
 
         // Strict Prompt Engineering ensures valid JSON output
         const prompt = `
@@ -87,7 +87,7 @@ const generateBattleQuestions = async (className) => {
         if (!process.env.GEMINI_API_KEY) throw new Error("Gemini API Key missing");
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
 
         const prompt = `
             Act as a Quiz Master for a 1v1 Battle Arena.
